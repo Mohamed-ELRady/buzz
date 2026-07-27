@@ -313,14 +313,7 @@
     </div>
     <div class="row">
       <div><div class="t" data-i="sCur">العملة</div><div class="d"></div></div>
-      <select id="inCur">
-        <option value="ج.م">ج.م</option>
-        <option value="ر.س">ر.س</option>
-        <option value="د.إ">د.إ</option>
-        <option value="د.ك">د.ك</option>
-        <option value="$">$</option>
-        <option value="€">€</option>
-      </select>
+      <select id="inCur"></select>
     </div>
     <div class="row">
       <div><div class="t" data-i="sAutoCalib">معايرة تلقائية للمكان</div><div class="d" data-i="sAutoCalibD">٣ ثواني بسمع ضوضاء المكان قبل ما يبدأ يحاسب، ويظبط الحساسية لوحده</div></div>
@@ -419,7 +412,7 @@
 <script>
 /* ================= الحالة ================= */
 const S = {
-  rate: 2, flag: 5, cur: 'ج.م', sens: 17, alarm: 50,
+  rate: 2, flag: 5, cur: 'EGP', sens: 17, alarm: 50,
   sound: true, vibe: true, wake: true,
   voiceLock: false,      // يعدّ على صاحب الصوت المسجَّل بس
   vThr: 0.60,            // عتبة التطابق
@@ -436,6 +429,31 @@ const PRESETS = [
   {k:'greedy', r:10, f:20},
   {k:'inlaw',  r:500, f:1000},
 ];
+
+/* العملة بتتخزّن كـكود ثابت، والاختصار المعروض بيتغيّر مع اللغة —
+   نفس العملة، بس ج.م بالعربي و L.E. بالإنجليزي. */
+const CURRENCIES = [
+  {c:'EGP', ar:'ج.م', en:'L.E.'},
+  {c:'SAR', ar:'ر.س', en:'SR'},
+  {c:'AED', ar:'د.إ', en:'AED'},
+  {c:'KWD', ar:'د.ك', en:'KD'},
+  {c:'USD', ar:'$',   en:'$'},
+  {c:'EUR', ar:'€',   en:'€'},
+];
+// النسخ القديمة كانت بتخزّن الرمز نفسه — بنحوّله للكود عشان الجلسات المحفوظة تفضل تشتغل
+const CUR_OLD = {'ج.م':'EGP','ر.س':'SAR','د.إ':'AED','د.ك':'KWD','$':'USD','€':'EUR'};
+
+function curLabel(v){
+  const code = CUR_OLD[v] || v;
+  const c = CURRENCIES.find(x=>x.c===code);
+  return c ? (S.lang==='en' ? c.en : c.ar) : (v||'');
+}
+function drawCurrencies(){
+  const sel = $('#inCur'); if(!sel) return;
+  sel.innerHTML = CURRENCIES.map(c=>
+    `<option value="${c.c}">${S.lang==='en'?c.en:c.ar} — ${c.c}</option>`).join('');
+  sel.value = S.cur;
+}
 
 /* ================= اللغات ================= */
 const T = {
@@ -646,11 +664,14 @@ const barEls = [...el.bars.children];
 /* ================= تخزين ================= */
 function load(){
   try{ Object.assign(S, JSON.parse(localStorage.buzzMeter||'{}')); }catch(e){}
-  $('#inRate').value=S.rate; $('#inFlag').value=S.flag; $('#inCur').value=S.cur;
+  $('#inRate').value=S.rate; $('#inFlag').value=S.flag;
   $('#inAlarm').value=S.alarm;
   toggleSw($('#swSound'),S.sound); toggleSw($('#swVibe'),S.vibe); toggleSw($('#swWake'),S.wake);
   toggleSw($('#swCalib'),S.autoCalib);
   if(S.vPrint && !Array.isArray(S.vPrint)) S.vPrint = null;
+  // ترحيل العملة من الرمز المخزَّن قديماً للكود الجديد
+  if(CUR_OLD[S.cur]) S.cur = CUR_OLD[S.cur];
+  if(!CURRENCIES.some(c=>c.c===S.cur)) S.cur = 'EGP';
   // ترحيل الإعداد القديم (مفتاح تشغيل/إيقاف) للأوضاع الجديدة
   if(!S.billMode) S.billMode = S.voiceLock ? 'owner' : 'all';
   if(S.billMode === 'owner' && !S.vPrint) S.billMode = 'all';
@@ -728,6 +749,7 @@ function applyLang(){
 
   sensLabel();
   updateKnownDesc();
+  drawCurrencies();
   $('#btnLang').textContent = L.otherShort;
   $('#btnLang').title = L.ttlLang;
   $('#btnSound').title = L.ttlSound;
@@ -735,13 +757,14 @@ function applyLang(){
   $('#btnHist').title = L.ttlHist;
   el.btnMain.textContent = running ? L.btnStop : L.btnStart;
   el.state.textContent = running ? (talking ? L.stTalk : L.stIdle) : L.stOff;
-  if(!$('#feed').querySelector('.it')) clearFeed();
+  renderFeed();          // الجُمل المعروضة تترسم باللغة الجديدة
+  renderSpeakers();      // وكذلك أسماء الحاضرين ووحداتهم
   updateVoiceUI();
 }
 
 function syncLabels(){
-  el.cur.textContent = S.cur;
-  el.rateTxt.textContent = `${fmt(S.rate)} ${S.cur} / ${L.ratePer}` + (S.flag>0? ` + ${fmt(S.flag)} ${L.rateFlag}`:'')
+  el.cur.textContent = curLabel(S.cur);
+  el.rateTxt.textContent = `${fmt(S.rate)} ${curLabel(S.cur)} / ${L.ratePer}` + (S.flag>0? ` + ${fmt(S.flag)} ${L.rateFlag}`:'')
     + (S.billMode==='owner' && S.vPrint ? ` · ${L.rateOwn}` : '')
     + (S.billMode==='split' ? ` · ${L.mSplit}` : '');
   $('#btnSound').textContent = S.sound? '🔊':'🔇';
@@ -1383,19 +1406,19 @@ async function showHistory(){
     return `<div class="hrow">
       <span>${d.toLocaleDateString(loc,{day:'numeric',month:'short'})} ${d.toLocaleTimeString(loc,{hour:'2-digit',minute:'2-digit'})}
         <div class="hd">${mmss(x.talkMs)} ${L.hOf} ${mmss(x.sessionMs)} · ${x.segments} ${L.rSegUnit}${who}</div></span>
-      <span class="hm">${fmt(x.money)} ${x.cur||''}</span>
+      <span class="hm">${fmt(x.money)} ${curLabel(x.cur)}</span>
     </div>`;
   }).join('');
 }
 
 /* سجل الجُمل */
-function addFeed(no, ms, v){
-  const feed = $('#feed');
-  const hint = feed.querySelector('.hint'); if(hint) hint.remove();
+/* بنحتفظ بالجُمل كبيانات مش HTML جاهز، عشان نقدر نعيد رسمها باللغة
+   الجديدة لما المستخدم يبدّل اللغة والعدّاد شغّال. */
+let feedItems = [];
+
+function feedRow(no, ms, v){
   const sec = ms/1000;
   const tag = sec>20 ? L.tagSpeech : sec>10 ? L.tagBreath : sec<1.2 ? L.tagFew : '';
-  const it = document.createElement('div');
-  it.className = 'it' + (v && v.rejected ? ' skip' : '');
 
   let note = L.fSec(sec.toFixed(1));
   if(v && v.speaker) note = speakerName(v.speaker) + ' · ' + note;
@@ -1410,9 +1433,33 @@ function addFeed(no, ms, v){
   const dot = v && v.speaker
     ? `<span style="display:inline-block;width:7px;height:7px;border-radius:50%;margin-left:6px;background:${spkColor(speakers.indexOf(v.speaker))}"></span>`
     : '';
-  it.innerHTML = `<span>${dot}${L.fSeg(no)}${tag}<div class="l">${note}</div></span>` + right;
+  return { cls:'it' + (v && v.rejected ? ' skip' : ''),
+           html:`<span>${dot}${L.fSeg(no)}${tag}<div class="l">${note}</div></span>` + right };
+}
+
+function addFeed(no, ms, v){
+  feedItems.unshift({no, ms, v});
+  while(feedItems.length > 40) feedItems.pop();
+
+  const feed = $('#feed');
+  const hint = feed.querySelector('.hint'); if(hint) hint.remove();
+  const r = feedRow(no, ms, v);
+  const it = document.createElement('div');
+  it.className = r.cls;
+  it.innerHTML = r.html;
   feed.prepend(it);
   while(feed.children.length > 40) feed.lastElementChild.remove();
+}
+
+/* إعادة رسم كامل — بنستخدمها بعد تبديل اللغة. من غير أنيميشن عشان
+   الصفوف الموجودة ما تقفزش كلها مرة واحدة. */
+function renderFeed(){
+  const feed = $('#feed');
+  if(!feedItems.length){ feed.innerHTML = `<div class="hint">${L.hint}</div>`; return; }
+  feed.innerHTML = feedItems.map(x=>{
+    const r = feedRow(x.no, x.ms, x.v);
+    return `<div class="${r.cls}" style="animation:none">${r.html}</div>`;
+  }).join('');
 }
 /* ================= تسجيل بصمة الصوت ================= */
 function vSet(msg, cls){
@@ -1560,6 +1607,7 @@ async function probe(){
 const sleep = ms => new Promise(r=>setTimeout(r,ms));
 
 function clearFeed(){
+  feedItems = [];
   $('#feed').innerHTML = `<div class="hint">${L.hint}</div>`;
 }
 
@@ -1671,7 +1719,7 @@ function showReceipt(){
     <div class="ln"><span>${L.rSilent}</span><span>${mmss(silent)}</span></div>
     ${S.billMode==='owner' && S.vPrint ? `<div class="ln"><span>${L.rNotYou}</span><span>${vRejected} ${L.rSegUnit} · ${mmss(vFreeMs)}</span></div>` : ''}
     <div class="ln"><span>${L.rPct}</span><span>${pct}%</span></div>
-    <div class="ln tot"><span>${L.rTotal}</span><span>${fmt(money)} ${S.cur}</span></div>
+    <div class="ln tot"><span>${L.rTotal}</span><span>${fmt(money)} ${curLabel(S.cur)}</span></div>
     ${splitRows()}
     <div class="ft">${verdict}<br>${L.rFoot}</div>`;
   openSheet('#sheetBill');
@@ -1692,15 +1740,15 @@ function splitRows(){
 async function share(){
   if(S.billMode==='split' && speakers.length){
     const lines = speakers.slice().sort((a,b)=>b.money-a.money)
-      .map(sp=>`${speakerName(sp)}: ${fmt(sp.money)} ${S.cur} (${mmss(sp.talkMs)})`).join('\n');
-    const t = `${L.shTitle}\n${L.rSplit}\n${lines}\n${L.rTotal}: ${fmt(money)} ${S.cur} 💸`;
+      .map(sp=>`${speakerName(sp)}: ${fmt(sp.money)} ${curLabel(S.cur)} (${mmss(sp.talkMs)})`).join('\n');
+    const t = `${L.shTitle}\n${L.rSplit}\n${lines}\n${L.rTotal}: ${fmt(money)} ${curLabel(S.cur)} 💸`;
     try{
       if(navigator.share) await navigator.share({title:L.shTitle, text:t});
       else { await navigator.clipboard.writeText(t); toast(L.copied); }
     }catch(e){}
     return;
   }
-  const txt = L.shBody(mmss(talkMs), mmss(sessionMs), segments, fmt(S.rate), S.cur, `${fmt(money)} ${S.cur}`);
+  const txt = L.shBody(mmss(talkMs), mmss(sessionMs), segments, fmt(S.rate), curLabel(S.cur), `${fmt(money)} ${curLabel(S.cur)}`);
   try{
     if(navigator.share) await navigator.share({title:L.shTitle, text:txt});
     else { await navigator.clipboard.writeText(txt); toast(L.copied); }
