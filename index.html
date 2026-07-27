@@ -600,7 +600,7 @@ function stopMic(){
 
 /* ============ قلب التول: قياس الصوت + حساب الفلوس ============ */
 function onAudio(e){
-  if(!running || !analyser) return;
+  if(!analyser) return;
 
   const buf = e.inputBuffer.getChannelData(0);
   let sum=0;
@@ -641,30 +641,36 @@ function onAudio(e){
   else hang = Math.max(0, hang - dt);               // تعليق عشان السكتات بين الكلمات
   const nowTalking = hang > 0;
 
-  // خزّن صوت الجملة الحالية عشان نتحقق من صاحبها لما تخلص
-  const wantAudio = enrollMode || probeCb || (S.voiceLock && S.vPrint);
-  if(wantAudio && (nowTalking || enrollMode)){
-    if(enrollMode){
-      if(enrollLen < 20*ac.sampleRate){ enrollBuf.push(new Float32Array(buf)); enrollLen += buf.length; }
-    } else if(segLen < MAX_UTTER*2){
-      segBuf.push(new Float32Array(buf)); segLen += buf.length;
+  // خزّن الصوت الخام: التسجيل والاختبار لازم يشتغلوا حتى لو العدّاد نفسه
+  // مقفول (مثلاً وانت لسه بتسجّل بصمتك أول مرة من الإعدادات)
+  if(enrollMode){
+    // الكلام بس — لو خزّنّا السكوت كمان البصمة بتتلوّث وبتقبل ناس تانية
+    if(nowTalking && enrollLen < 20*ac.sampleRate){
+      enrollBuf.push(new Float32Array(buf)); enrollLen += buf.length;
     }
+  } else if(probeCb && nowTalking){
+    if(segLen < MAX_UTTER*2){ segBuf.push(new Float32Array(buf)); segLen += buf.length; }
+  } else if(running && S.voiceLock && S.vPrint && nowTalking){
+    if(segLen < MAX_UTTER*2){ segBuf.push(new Float32Array(buf)); segLen += buf.length; }
   }
 
   if(nowTalking !== talking){
     talking = nowTalking;
-    el.meter.classList.toggle('talking', talking);
-    el.state.textContent = talking? 'بيتكلم… العدّاد شغال':'ساكت';
-    el.state.classList.toggle('on', talking);
-    if(talking){ segments++; curSegMs=0; el.stSeg.textContent=segments; if(!enrollMode){ segBuf=[]; segLen=0; } }
-    else {
-      longestMs = Math.max(longestMs, curSegMs);
-      if(curSegMs > 400) endUtterance(segments, curSegMs);
-      curSegMs=0; segBuf=[]; segLen=0;
+    if(talking && !enrollMode){ segBuf=[]; segLen=0; }
+    if(running){
+      el.meter.classList.toggle('talking', talking);
+      el.state.textContent = talking? 'بيتكلم… العدّاد شغال':'ساكت';
+      el.state.classList.toggle('on', talking);
+      if(talking){ segments++; curSegMs=0; el.stSeg.textContent=segments; }
+      else {
+        longestMs = Math.max(longestMs, curSegMs);
+        if(curSegMs > 400) endUtterance(segments, curSegMs);
+        curSegMs=0; segBuf=[]; segLen=0;
+      }
     }
   }
 
-  if(talking){
+  if(running && talking){
     talkMs += dt; curSegMs += dt;
     const add = (S.rate/60) * (dt/1000);
     if(S.voiceLock && S.vPrint){
@@ -822,8 +828,13 @@ async function enroll(){
     const audio = toSR(enrollBuf, enrollLen, ac ? ac.sampleRate : SR);
     enrollBuf=[]; enrollLen=0;
 
-    // نقطّعه لمقاطع 3 ثواني ونعمل متوسط البصمات — أدق من مقطع واحد
-    const seg = 3*SR, embs = [];
+    if(audio.length < 5*SR){
+      vSet(`سمعت ${(audio.length/SR).toFixed(1)} ثانية كلام بس — قرّب من التليفون واتكلم متواصل`, 'busy');
+      return;
+    }
+
+    // نقطّعه لمقاطع 2.5 ثانية ونعمل متوسط البصمات — أدق من مقطع واحد
+    const seg = Math.round(2.5*SR), embs = [];
     for(let o=0; o+seg <= audio.length; o += seg){
       const e = await embed(audio.slice(o, o+seg), 'enroll');
       if(e) embs.push(e);
@@ -868,23 +879,30 @@ async function probe(){
     vSet('اتكلم دلوقتي… بقيس', 'busy');
     probeCb = true;
     const t0 = Date.now();
-    let best = null;
-    while(Date.now()-t0 < 9000){
-      await sleep(250);
-      if(!talking && segLen > 1.2*SR){
+    const scores = [];
+    // بنقيس كل ~3 ثواني كلام، من غير ما نستنى الواحد يسكت — لأنه ممكن
+    // يفضل بيتكلم متواصل. 3 ثواني عشان النوافذ الأقصر نتيجتها متذبذبة.
+    while(Date.now()-t0 < 10000){
+      await sleep(200);
+      if(segLen >= 3*SR){
         const clip = toSR(segBuf, Math.min(segLen, MAX_UTTER), ac?ac.sampleRate:SR);
         segBuf=[]; segLen=0;
         const e = await embed(clip.slice(0, MAX_UTTER), 'probe');
         if(e){
           const sc = cosine(e, S.vPrint);
-          best = best==null ? sc : Math.max(best, sc);
+          scores.push(sc);
           vSet(`تطابق ${(sc*100).toFixed(0)}% — ${sc>=S.vThr?'صوتك ✅':'مش صوتك ❌'}`, sc>=S.vThr?'ok':'busy');
         }
       }
-      vProg((Date.now()-t0)/9000);
+      vProg((Date.now()-t0)/10000);
     }
-    probeCb = null;
-    if(best==null) vSet('مسمعتش كلام كفاية — قرّب وجرّب تاني','busy');
+    probeCb = null; segBuf=[]; segLen=0;
+    if(!scores.length){ vSet('مسمعتش كلام كفاية — قرّب من التليفون واتكلم أعلى','busy'); return; }
+    // الوسيط مش الأعلى: أعلى قراءة بتبقى متفائلة وتضلّلك وانت بتعاير
+    const sorted = [...scores].sort((a,b)=>a-b);
+    const med = sorted[Math.floor(sorted.length/2)];
+    const rng = scores.length>1 ? ` (من ${(Math.min(...scores)*100).toFixed(0)}% لـ${(Math.max(...scores)*100).toFixed(0)}%)` : '';
+    vSet(`تطابق ${(med*100).toFixed(0)}%${rng} — ${med>=S.vThr?'اتعرف عليك ✅':'مش صوتك ❌'}`, med>=S.vThr?'ok':'busy');
   }).catch(()=>{ probeCb=null; });
   vProg(0);
 }
