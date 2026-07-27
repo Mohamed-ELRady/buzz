@@ -69,6 +69,7 @@
   .amount.hot{color:var(--red);text-shadow:0 0 30px rgba(255,77,77,.45)}
   .rateline{margin-top:2px;font-size:13px;color:var(--dim)}
   .rateline b{color:var(--green);font-weight:700}
+  .pend{display:none;margin-top:6px;font-size:12.5px;color:var(--amber);opacity:.85}
 
   .stats{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:14px}
   .stat{background:#0c1210;border:1px solid var(--line);border-radius:12px;padding:8px 4px}
@@ -165,6 +166,27 @@
   .err{background:rgba(255,77,77,.1);border:1px solid rgba(255,77,77,.3);color:#ffb4b4;
        border-radius:12px;padding:12px;font-size:13.5px;line-height:1.6;margin-top:10px;display:none}
 
+  /* ===== بصمة الصوت ===== */
+  .vstat{
+    background:#0c1210;border:1px solid var(--line);border-radius:12px;
+    padding:12px;font-size:14px;text-align:center;margin-bottom:12px;color:var(--dim);
+  }
+  .vstat.ok{border-color:rgba(57,225,124,.4);color:var(--green)}
+  .vstat.busy{border-color:rgba(255,176,46,.4);color:var(--amber)}
+  .vbar{height:8px;background:#161d1a;border-radius:99px;overflow:hidden;margin-bottom:8px}
+  .vbarfill{height:100%;width:0;background:linear-gradient(90deg,var(--green),var(--amber));
+            border-radius:99px;transition:width .2s linear}
+  .vhint{font-size:12.5px;color:var(--dim);line-height:1.8;margin-bottom:12px}
+  .vread{
+    display:none;background:#0c1210;border:1px solid var(--line);border-radius:12px;
+    padding:14px;font-size:16px;line-height:2;margin-bottom:12px;
+  }
+  .vread.show{display:block}
+  .vwarn{
+    background:rgba(255,176,46,.07);border:1px solid rgba(255,176,46,.25);
+    border-radius:12px;padding:11px;font-size:12px;color:#e8c98d;line-height:1.8;margin-top:14px;
+  }
+
   /* ===== سجل الجُمل ===== */
   .feed{
     flex:1;min-height:70px;background:var(--panel);border:1px solid var(--line);
@@ -179,6 +201,8 @@
   .feed .it:last-child{border-bottom:0}
   .feed .it .l{color:var(--dim);font-size:12px}
   .feed .it .r{color:var(--green);font-weight:700;font-variant-numeric:tabular-nums;direction:ltr}
+  .feed .it.skip{opacity:.62}
+  .feed .it .r.free{color:var(--dim);font-weight:600;direction:rtl;font-size:12.5px}
   @keyframes slide{from{opacity:0;transform:translateY(-6px)}}
 </style>
 </head>
@@ -196,6 +220,7 @@
   <div class="label">الحساب لحد دلوقتي</div>
   <div class="amount" id="amount"><span id="amountVal">0.00</span><span class="cur" id="cur">ج.م</span></div>
   <div class="rateline">التعريفة: <b id="rateTxt">2 ج.م / دقيقة كلام</b></div>
+  <div class="pend" id="pend"></div>
   <div class="stats">
     <div class="stat"><div class="v" id="stTalk">0:00</div><div class="k">مدة الكلام</div></div>
     <div class="stat"><div class="v" id="stTotal">0:00</div><div class="k">مدة الجلسة</div></div>
@@ -261,6 +286,14 @@
       <input type="number" id="inAlarm" min="0" step="10" value="50">
     </div>
     <div class="row">
+      <div><div class="t">يعدّ على صوتي أنا بس 🎙️</div><div class="d" id="vlDesc">محتاج تسجّل بصمة صوتك الأول</div></div>
+      <div class="sw" id="swVoice"></div>
+    </div>
+    <div class="row">
+      <div><div class="t">بصمة الصوت</div><div class="d">تسجيل، اختبار، وضبط الصرامة</div></div>
+      <button class="chip" id="btnOpenVoice">افتح</button>
+    </div>
+    <div class="row">
       <div><div class="t">صوت الكاشينج</div><div class="d">تكة كل ما يتحصّل مبلغ</div></div>
       <div class="sw on" id="swSound"></div>
     </div>
@@ -274,6 +307,40 @@
     </div>
 
     <button class="big start" id="btnCloseSettings">تمام</button>
+  </div>
+</div>
+
+<!-- ===== بصمة الصوت ===== -->
+<div class="sheet" id="sheetVoice">
+  <div class="card">
+    <h2>بصمة صوتك 🎙️</h2>
+    <div class="sub">سجّل صوتك مرة واحدة، وبعدها العدّاد يعدّ عليك إنت بس</div>
+
+    <div class="vstat" id="vStat">لسه مسجّلتش بصمة</div>
+
+    <div class="vbar"><div class="vbarfill" id="vBar"></div></div>
+    <div class="vhint" id="vHint">
+      دوس «سجّل بصمتي» واقرا الكلام اللي هيظهر بصوت عادي لمدة ١٢ ثانية،
+      وإنت في نفس المكان اللي هتستخدم فيه التطبيق.
+    </div>
+
+    <div class="vread" id="vRead"></div>
+
+    <button class="big start" id="btnEnroll">سجّل بصمتي</button>
+    <button class="big ghost" id="btnProbe" style="width:100%;flex:none;margin-top:8px">اختبر: ده صوتي ولا لأ؟</button>
+
+    <div class="row" style="margin-top:14px">
+      <div><div class="t">صرامة التطابق</div><div class="d" id="thrTxt">متوازن</div></div>
+      <input type="range" id="inThr" min="40" max="80" step="1" value="60">
+    </div>
+
+    <div class="vwarn">
+      التعرّف على الصوت مش مضمون ١٠٠٪ — الأصوات المتشابهة جداً (خصوصاً من نفس
+      العيلة أو نفس النوع) ممكن تتلخبط. لو حصل، زوّد الصرامة أو سجّل البصمة تاني
+      في مكان أهدى.
+    </div>
+
+    <button class="big ghost" id="btnCloseVoice" style="width:100%;flex:none;margin-top:14px">تمام</button>
   </div>
 </div>
 
@@ -294,7 +361,10 @@
 /* ================= الحالة ================= */
 const S = {
   rate: 2, flag: 5, cur: 'ج.م', sens: 17, alarm: 50,
-  sound: true, vibe: true, wake: true
+  sound: true, vibe: true, wake: true,
+  voiceLock: false,      // يعدّ على صاحب الصوت المسجَّل بس
+  vThr: 0.60,            // عتبة التطابق
+  vPrint: null           // بصمة الصوت (256 رقم)
 };
 const PRESETS = [
   {n:'هزار خفيف', r:1,  f:0},
@@ -311,13 +381,23 @@ let ac=null, analyser=null, stream=null, srcNode=null, raf=null, timer=null, wak
 let proc=null, muteGain=null, fd=null, noiseFloor=-70, hang=0;
 let lastLevel=0, lastThr=0, hitStreak=0;
 
+/* بصمة الصوت */
+const SR = 16000;                       // النموذج شغال على 16 كيلوهرتز
+const MAX_UTTER = 8*SR;                 // أطول مقطع نبعته للنموذج
+let segBuf=[], segLen=0;                // صوت الجملة الحالية
+let pending=0, pendingMs=0;             // فلوس مستنية التحقق
+let vWorker=null, vReady=false, vLoading=false, vJobId=0;
+let vRejected=0, vFreeMs=0;             // إحصائيات كلام مش بتاع صاحبه
+let lastOwnerAt=0;                      // آخر جملة اتأكد إنها بتاعته
+let enrollMode=false, enrollBuf=[], enrollLen=0, probeCb=null;
+
 /* ================= عناصر ================= */
 const $ = s=>document.querySelector(s);
 const el = {
   dot:$('#dot'), meter:$('#meter'), amountVal:$('#amountVal'), amount:$('#amount'), cur:$('#cur'),
   rateTxt:$('#rateTxt'), stTalk:$('#stTalk'), stTotal:$('#stTotal'), stSeg:$('#stSeg'),
   bars:$('#bars'), fill:$('#fill'), state:$('#state'), err:$('#err'),
-  btnMain:$('#btnMain'), btnReset:$('#btnReset')
+  btnMain:$('#btnMain'), btnReset:$('#btnReset'), pend:$('#pend')
 };
 
 const BARS = 28;
@@ -330,15 +410,24 @@ function load(){
   $('#inRate').value=S.rate; $('#inFlag').value=S.flag; $('#inCur').value=S.cur;
   $('#inSens').value=S.sens; $('#inAlarm').value=S.alarm;
   toggleSw($('#swSound'),S.sound); toggleSw($('#swVibe'),S.vibe); toggleSw($('#swWake'),S.wake);
-  syncLabels();
+  if(S.vPrint && !Array.isArray(S.vPrint)) S.vPrint = null;
+  if(!S.vPrint) S.voiceLock = false;
+  toggleSw($('#swVoice'), S.voiceLock);
+  $('#inThr').value = Math.round(S.vThr*100);
+  updateVoiceUI();
 }
 function save(){ localStorage.buzzMeter = JSON.stringify(S); }
 function toggleSw(sw,on){ sw.classList.toggle('on',on); }
 
 function syncLabels(){
   el.cur.textContent = S.cur;
-  el.rateTxt.textContent = `${fmt(S.rate)} ${S.cur} / دقيقة كلام` + (S.flag>0? ` + ${fmt(S.flag)} فتح عدّاد`:'');
+  el.rateTxt.textContent = `${fmt(S.rate)} ${S.cur} / دقيقة كلام` + (S.flag>0? ` + ${fmt(S.flag)} فتح عدّاد`:'')
+    + (S.voiceLock && S.vPrint ? ' · على صوتك إنت بس 🎙️' : '');
   $('#btnSound').textContent = S.sound? '🔊':'🔇';
+  const vd = $('#vlDesc');
+  if(vd) vd.textContent = S.vPrint
+    ? (S.voiceLock ? 'شغّال — أي حد تاني بيتكلم ببلاش' : 'البصمة متسجّلة، بس الخيار مقفول')
+    : 'محتاج تسجّل بصمة صوتك الأول';
   drawPresets();
 }
 function drawPresets(){
@@ -387,12 +476,84 @@ function alarmSound(){
 }
 function vibe(ms){ if(S.vibe && navigator.vibrate) navigator.vibrate(ms); }
 
+/* ================= بصمة الصوت ================= */
+/* النموذج بيشتغل جوه Worker لأن onaudioprocess شغال على الthread الرئيسي،
+   ولو الاستنتاج اشتغل عليه هيقطّع الصوت ويضيّع بلوكات. */
+const WORKER_SRC = `
+import { AutoModel, AutoProcessor } from 'https://cdn.jsdelivr.net/npm/@huggingface/transformers@3.3.3';
+const MODEL = 'onnx-community/wespeaker-voxceleb-resnet34-LM';
+let model, processor;
+self.onmessage = async (ev) => {
+  const m = ev.data;
+  try{
+    if(m.type === 'load'){
+      model = await AutoModel.from_pretrained(MODEL, { dtype:'q8' });
+      processor = await AutoProcessor.from_pretrained(MODEL);
+      self.postMessage({type:'ready'});
+    } else if(m.type === 'embed'){
+      const inputs = await processor(m.audio);
+      const res = await model(inputs);
+      const v = res.last_hidden_state.tolist()[0];
+      let s = 0; for(const x of v) s += x*x;
+      const n = Math.sqrt(s) || 1;
+      self.postMessage({type:'emb', id:m.id, tag:m.tag, emb: v.map(x=>x/n)});
+    }
+  }catch(err){
+    self.postMessage({type:'err', id:m.id, tag:m.tag, msg: String(err && err.message || err)});
+  }
+};
+`;
+
+function cosine(a,b){ let s=0; for(let i=0;i<a.length;i++) s += a[i]*b[i]; return s; }
+function centroid(list){
+  const c = new Array(list[0].length).fill(0);
+  for(const e of list) for(let i=0;i<c.length;i++) c[i] += e[i]/list.length;
+  const n = Math.hypot(...c) || 1;
+  return c.map(x=>x/n);
+}
+
+function loadVoiceModel(onProgress){
+  if(vReady) return Promise.resolve(true);
+  if(vWorker && vLoading) return vLoading;
+  vWorker = new Worker(URL.createObjectURL(new Blob([WORKER_SRC],{type:'text/javascript'})), {type:'module'});
+  vWorker.onmessage = e=>{
+    const m = e.data;
+    if(m.type === 'ready'){ vReady = true; }
+    else if(m.type === 'emb' || m.type === 'err'){
+      const cb = pendingJobs.get(m.id);
+      if(cb){ pendingJobs.delete(m.id); cb(m.type === 'emb' ? m.emb : null, m.tag); }
+    }
+  };
+  vLoading = new Promise((res,rej)=>{
+    const t0 = Date.now();
+    const iv = setInterval(()=>{
+      if(vReady){ clearInterval(iv); res(true); }
+      else if(Date.now()-t0 > 120000){ clearInterval(iv); rej(new Error('timeout')); }
+      else if(onProgress) onProgress(Date.now()-t0);
+    }, 250);
+    vWorker.postMessage({type:'load'});
+  });
+  return vLoading;
+}
+
+const pendingJobs = new Map();
+function embed(audio, tag){
+  return new Promise(res=>{
+    if(!vReady){ res(null); return; }
+    const id = ++vJobId;
+    pendingJobs.set(id, (emb)=>res(emb));
+    vWorker.postMessage({type:'embed', id, tag, audio}, [audio.buffer]);
+  });
+}
+
 /* ================= المايك ================= */
 async function startMic(){
   stream = await navigator.mediaDevices.getUserMedia({
     audio:{ echoCancellation:false, noiseSuppression:false, autoGainControl:false }
   });
-  ac = new (window.AudioContext||window.webkitAudioContext)();
+  const AC = window.AudioContext||window.webkitAudioContext;
+  // 16 كيلوهرتز مباشرة عشان نموذج بصمة الصوت، ولو المتصفح رفض بنعمل تحويل يدوي
+  try{ ac = new AC({sampleRate:SR}); }catch(e){ ac = new AC(); }
   await ac.resume();
   srcNode = ac.createMediaStreamSource(stream);
   analyser = ac.createAnalyser();
@@ -410,6 +571,22 @@ async function startMic(){
   proc.onaudioprocess = onAudio;
 
   noiseFloor = -70; hang = 0; hitStreak = 0;
+  segBuf=[]; segLen=0;
+}
+
+/* تحويل لـ16 كيلوهرتز لو المتصفح مدّانا معدل تاني */
+function toSR(chunks, total, from){
+  const flat = new Float32Array(total);
+  let o=0; for(const c of chunks){ flat.set(c, o); o+=c.length; }
+  if(Math.abs(from-SR) < 1) return flat;
+  const ratio = from/SR, n = Math.floor(total/ratio);
+  const outArr = new Float32Array(n);
+  for(let i=0;i<n;i++){
+    const p = i*ratio, i0 = Math.floor(p), frac = p-i0;
+    const a = flat[i0]||0, b = flat[i0+1]!==undefined ? flat[i0+1] : a;
+    outArr[i] = a + (b-a)*frac;                 // استيفاء خطي
+  }
+  return outArr;
 }
 function stopMic(){
   if(raf) cancelAnimationFrame(raf), raf=null;
@@ -464,27 +641,81 @@ function onAudio(e){
   else hang = Math.max(0, hang - dt);               // تعليق عشان السكتات بين الكلمات
   const nowTalking = hang > 0;
 
+  // خزّن صوت الجملة الحالية عشان نتحقق من صاحبها لما تخلص
+  const wantAudio = enrollMode || probeCb || (S.voiceLock && S.vPrint);
+  if(wantAudio && (nowTalking || enrollMode)){
+    if(enrollMode){
+      if(enrollLen < 20*ac.sampleRate){ enrollBuf.push(new Float32Array(buf)); enrollLen += buf.length; }
+    } else if(segLen < MAX_UTTER*2){
+      segBuf.push(new Float32Array(buf)); segLen += buf.length;
+    }
+  }
+
   if(nowTalking !== talking){
     talking = nowTalking;
     el.meter.classList.toggle('talking', talking);
     el.state.textContent = talking? 'بيتكلم… العدّاد شغال':'ساكت';
     el.state.classList.toggle('on', talking);
-    if(talking){ segments++; curSegMs=0; el.stSeg.textContent=segments; }
+    if(talking){ segments++; curSegMs=0; el.stSeg.textContent=segments; if(!enrollMode){ segBuf=[]; segLen=0; } }
     else {
       longestMs = Math.max(longestMs, curSegMs);
-      if(curSegMs > 400) addFeed(segments, curSegMs);
-      curSegMs=0;
+      if(curSegMs > 400) endUtterance(segments, curSegMs);
+      curSegMs=0; segBuf=[]; segLen=0;
     }
   }
 
   if(talking){
     talkMs += dt; curSegMs += dt;
-    money  += (S.rate/60) * (dt/1000);
-    if(money >= nextTick){ nextTick = Math.floor(money) + 1; kaching(); vibe(18); }
-    if(S.alarm>0 && !alarmFired && money >= S.alarm){ alarmFired=true; alarmSound(); vibe([90,60,90,60,180]); }
-    el.amountVal.textContent = fmt(money);
-    el.amount.classList.toggle('hot', S.alarm>0 && money>=S.alarm);
+    const add = (S.rate/60) * (dt/1000);
+    if(S.voiceLock && S.vPrint){
+      pending += add; pendingMs += dt;          // مستنية التحقق من الصوت
+      el.pend.textContent = `جاري التحقق… +${fmt(pending)}`;
+      el.pend.style.display = 'block';
+    } else {
+      commitMoney(add);
+    }
     el.stTalk.textContent = mmss(talkMs);
+  }
+}
+
+function commitMoney(add){
+  money += add;
+  if(money >= nextTick){ nextTick = Math.floor(money) + 1; kaching(); vibe(18); }
+  if(S.alarm>0 && !alarmFired && money >= S.alarm){ alarmFired=true; alarmSound(); vibe([90,60,90,60,180]); }
+  el.amountVal.textContent = fmt(money);
+  el.amount.classList.toggle('hot', S.alarm>0 && money>=S.alarm);
+}
+
+/* الجملة خلصت: نتحقق من صاحبها ونحصّل أو نسيب */
+async function endUtterance(no, ms){
+  if(!(S.voiceLock && S.vPrint)){ addFeed(no, ms); return; }
+
+  const amount = pending, heldMs = pendingMs;
+  pending = 0; pendingMs = 0;
+  el.pend.style.display = 'none';
+
+  const audio = toSR(segBuf, Math.min(segLen, MAX_UTTER*2), ac ? ac.sampleRate : SR);
+  const clip  = audio.length > MAX_UTTER ? audio.slice(0, MAX_UTTER) : audio;
+
+  // أقل من 0.9 ثانية مش كفاية للحكم — نكمّل على آخر حكم لو كان قريب
+  if(clip.length < 0.9*SR){
+    const recentOwner = Date.now() - lastOwnerAt < 4000;
+    if(recentOwner){ commitMoney(amount); addFeed(no, ms, {score:null, short:true}); }
+    else { vRejected++; vFreeMs += heldMs; addFeed(no, ms, {rejected:true, short:true}); }
+    return;
+  }
+
+  const emb = await embed(clip, no);
+  if(!emb){ commitMoney(amount); addFeed(no, ms, {score:null, failed:true}); return; }
+
+  const score = cosine(emb, S.vPrint);
+  if(score >= S.vThr){
+    lastOwnerAt = Date.now();
+    commitMoney(amount);
+    addFeed(no, ms, {score});
+  } else {
+    vRejected++; vFreeMs += heldMs;
+    addFeed(no, ms, {score, rejected:true});
   }
 }
 
@@ -504,18 +735,162 @@ function loop(){
 }
 
 /* سجل الجُمل */
-function addFeed(no, ms){
+function addFeed(no, ms, v){
   const feed = $('#feed');
   const hint = feed.querySelector('.hint'); if(hint) hint.remove();
   const sec = ms/1000;
   const tag = sec>20 ? ' 🎤 خطبة' : sec>10 ? ' 😮 نَفَس واحد' : sec<1.2 ? ' 🤏 كلمتين' : '';
   const it = document.createElement('div');
-  it.className='it';
-  it.innerHTML = `<span>جملة #${no}${tag}<div class="l">${sec.toFixed(1)} ثانية</div></span>`+
-                 `<span class="r">+${fmt(sec/60*S.rate)}</span>`;
+  it.className = 'it' + (v && v.rejected ? ' skip' : '');
+
+  let note = `${sec.toFixed(1)} ثانية`;
+  if(v && v.score != null) note += ` · تطابق ${(v.score*100).toFixed(0)}%`;
+  else if(v && v.short) note += ' · قصيرة';
+  else if(v && v.failed) note += ' · تعذّر التحقق';
+
+  const right = (v && v.rejected)
+    ? `<span class="r free">مش صوتك · ببلاش</span>`
+    : `<span class="r">+${fmt(sec/60*S.rate)}</span>`;
+
+  it.innerHTML = `<span>جملة #${no}${tag}<div class="l">${note}</div></span>` + right;
   feed.prepend(it);
   while(feed.children.length > 40) feed.lastElementChild.remove();
 }
+/* ================= تسجيل بصمة الصوت ================= */
+const READ_TEXT = 'الكلام في بلدنا بقى بفلوس، واللي عايز يتكلم يدفع الحساب. '+
+                  'أنا بجرّب العدّاد ده عشان أشوف صوتي بيتحسب إزاي، '+
+                  'ولو حد تاني اتكلم جنبي المفروض ما يتحسبش عليه ولا مليم.';
+
+function vSet(msg, cls){
+  const n = $('#vStat');
+  n.textContent = msg;
+  n.className = 'vstat' + (cls ? ' '+cls : '');
+}
+function vProg(p){ $('#vBar').style.width = Math.max(0,Math.min(100,p*100)) + '%'; }
+
+function updateVoiceUI(){
+  const has = !!S.vPrint;
+  $('#btnEnroll').textContent = has ? 'سجّل بصمتي من جديد' : 'سجّل بصمتي';
+  $('#btnProbe').style.display = has ? 'block' : 'none';
+  if(has) vSet('البصمة متسجّلة ✅', 'ok');
+  else    vSet('لسه مسجّلتش بصمة');
+  const pct = Math.round(S.vThr*100);
+  $('#inThr').value = pct;
+  $('#thrTxt').textContent =
+    pct <= 50 ? `متساهل (${pct}%) — يقبل بسهولة` :
+    pct <= 65 ? `متوازن (${pct}%)` :
+                `صارم (${pct}%) — ممكن يرفضك أحياناً`;
+  syncLabels();
+}
+
+/* بيفتح المايك لوحده لو العدّاد مش شغال */
+async function withMic(fn){
+  const owned = !running && !ac;
+  if(owned) await startMic();
+  try { return await fn(); }
+  finally { if(owned) stopMic(); }
+}
+
+async function enroll(){
+  if(enrollMode) return;
+  try{
+    vSet('بحمّل نموذج التعرّف… (أول مرة بس)', 'busy');
+    vProg(0);
+    await loadVoiceModel(ms => vProg(Math.min(.9, ms/25000)));
+  }catch(e){
+    vSet('مقدرتش أحمّل النموذج — اتأكد إن فيه نت', 'busy');
+    return;
+  }
+  vProg(0);
+  $('#vRead').textContent = READ_TEXT;
+  $('#vRead').classList.add('show');
+
+  await withMic(async () => {
+    for(let i=3;i>0;i--){ vSet(`استعد… ${i}`, 'busy'); blip(660,.08); await sleep(700); }
+    vSet('اتكلم دلوقتي 🎙️', 'busy'); blip(980,.12);
+
+    enrollBuf=[]; enrollLen=0; enrollMode=true;
+    const DUR = 12000, t0 = Date.now();
+    while(Date.now()-t0 < DUR){
+      vProg((Date.now()-t0)/DUR);
+      await sleep(100);
+    }
+    enrollMode = false;
+    blip(520,.15);
+    vSet('بحلّل صوتك…', 'busy'); vProg(1);
+
+    const audio = toSR(enrollBuf, enrollLen, ac ? ac.sampleRate : SR);
+    enrollBuf=[]; enrollLen=0;
+
+    // نقطّعه لمقاطع 3 ثواني ونعمل متوسط البصمات — أدق من مقطع واحد
+    const seg = 3*SR, embs = [];
+    for(let o=0; o+seg <= audio.length; o += seg){
+      const e = await embed(audio.slice(o, o+seg), 'enroll');
+      if(e) embs.push(e);
+    }
+    if(embs.length < 2){
+      vSet('التسجيل مش كفاية — جرّب تاني وإنت بتتكلم متواصل', 'busy');
+      return;
+    }
+
+    S.vPrint = centroid(embs);
+
+    // العتبة بالتحقق المتقاطع: كل مقطع يتقارن بمركز مبني من الباقي بدونه.
+    // لو قارنّاه بمركز هو نفسه جزء منه الرقم بيطلع متفائل والعتبة تبقى صارمة وترفض صاحبها.
+    const loo = embs.map((_,i)=> cosine(embs[i], centroid(embs.filter((_,j)=>j!==i))));
+    const minLoo = Math.min(...loo);
+    // هامش واسع لأن الكلام العادي بيتغيّر أكتر من قراءة نص متواصل
+    S.vThr = Math.max(0.40, Math.min(0.55, minLoo - 0.25));
+
+    S.voiceLock = true;
+    save(); updateVoiceUI();
+    vSet(`تمام ✅ اتسجّلت من ${embs.length} مقاطع — العتبة ${(S.vThr*100).toFixed(0)}%`, 'ok');
+    $('#vHint').textContent = 'جرّب دلوقتي «اختبر: ده صوتي ولا لأ؟» وخلّي حد تاني يجرّب كمان. '+
+      'لو رفضك إنت قلّل الصرامة، ولو قبل حد تاني زوّدها.';
+    kaching();
+  }).catch(e=>{
+    enrollMode = false;
+    vSet('حصلت مشكلة: ' + (e.message||e), 'busy');
+  });
+  $('#vRead').classList.remove('show');
+  vProg(0);
+}
+
+/* اختبار حي: اتكلم وشوف نسبة التطابق */
+async function probe(){
+  if(!S.vPrint || probeCb) return;
+  try{
+    vSet('بحمّل النموذج…','busy');
+    await loadVoiceModel();
+  }catch(e){ vSet('مقدرتش أحمّل النموذج','busy'); return; }
+
+  await withMic(async () => {
+    vSet('اتكلم دلوقتي… بقيس', 'busy');
+    probeCb = true;
+    const t0 = Date.now();
+    let best = null;
+    while(Date.now()-t0 < 9000){
+      await sleep(250);
+      if(!talking && segLen > 1.2*SR){
+        const clip = toSR(segBuf, Math.min(segLen, MAX_UTTER), ac?ac.sampleRate:SR);
+        segBuf=[]; segLen=0;
+        const e = await embed(clip.slice(0, MAX_UTTER), 'probe');
+        if(e){
+          const sc = cosine(e, S.vPrint);
+          best = best==null ? sc : Math.max(best, sc);
+          vSet(`تطابق ${(sc*100).toFixed(0)}% — ${sc>=S.vThr?'صوتك ✅':'مش صوتك ❌'}`, sc>=S.vThr?'ok':'busy');
+        }
+      }
+      vProg((Date.now()-t0)/9000);
+    }
+    probeCb = null;
+    if(best==null) vSet('مسمعتش كلام كفاية — قرّب وجرّب تاني','busy');
+  }).catch(()=>{ probeCb=null; });
+  vProg(0);
+}
+
+const sleep = ms => new Promise(r=>setTimeout(r,ms));
+
 function clearFeed(){
   $('#feed').innerHTML = '<div class="hint">دوس «ابدأ العدّاد» وسيب التليفون جنبك…<br>'+
     'كل جملة هتتكلمها هتلاقيها هنا بسعرها 😏</div>';
@@ -540,6 +915,9 @@ async function start(){
   running=true; talking=false; hang=0;
   money = S.flag; nextTick = Math.floor(money)+1; alarmFired=false;
   talkMs=0; segments=0; longestMs=0; curSegMs=0;
+  pending=0; pendingMs=0; vRejected=0; vFreeMs=0; lastOwnerAt=0;
+  el.pend.style.display='none';
+  if(S.voiceLock && S.vPrint) loadVoiceModel().catch(()=>{});
   startedAt=Date.now(); lastFrame=performance.now();
   el.stSeg.textContent='0'; el.stTalk.textContent='0:00';
   clearFeed();
@@ -574,6 +952,8 @@ function reset(){
   money = running? S.flag : 0;
   nextTick=Math.floor(money)+1; alarmFired=false;
   talkMs=0; segments=0; longestMs=0; curSegMs=0; startedAt=Date.now();
+  pending=0; pendingMs=0; vRejected=0; vFreeMs=0; lastOwnerAt=0;
+  el.pend.style.display='none';
   el.amountVal.textContent=fmt(money); el.stTalk.textContent='0:00';
   el.stTotal.textContent='0:00'; el.stSeg.textContent='0';
   el.amount.classList.remove('hot');
@@ -606,6 +986,7 @@ function showReceipt(){
     <div class="ln"><span>عدد الجُمل</span><span>${segments}</span></div>
     <div class="ln"><span>أطول نَفَس من غير سكوت</span><span>${mmss(longestMs)}</span></div>
     <div class="ln"><span>مدة السكوت (مجاناً)</span><span>${mmss(silent)}</span></div>
+    ${S.voiceLock && S.vPrint ? `<div class="ln"><span>كلام مش بتاعك (مجاناً)</span><span>${vRejected} جملة · ${mmss(vFreeMs)}</span></div>` : ''}
     <div class="ln"><span>نسبة الكلام من الجلسة</span><span>${pct}%</span></div>
     <div class="ln tot"><span>الإجمالي</span><span>${fmt(money)} ${S.cur}</span></div>
     <div class="ft">${verdict}<br>الخدمة دي للهزار — السكوت من دهب، والكلام بقى بفلوس.</div>`;
@@ -670,6 +1051,17 @@ $('#inAlarm').oninput = e=>{ S.alarm=Math.max(0,+e.target.value||0); save(); };
 $('#swSound').onclick = ()=>{ S.sound=!S.sound; toggleSw($('#swSound'),S.sound); save(); syncLabels(); };
 $('#swVibe').onclick  = ()=>{ S.vibe=!S.vibe;  toggleSw($('#swVibe'),S.vibe); save(); vibe(30); };
 $('#swWake').onclick  = ()=>{ S.wake=!S.wake;  toggleSw($('#swWake'),S.wake); save(); S.wake?requestWake():releaseWake(); };
+
+/* بصمة الصوت */
+$('#btnOpenVoice').onclick = ()=>{ closeSheet('#sheetSettings'); openSheet('#sheetVoice'); updateVoiceUI(); };
+$('#btnCloseVoice').onclick = ()=>{ closeSheet('#sheetVoice'); openSheet('#sheetSettings'); };
+$('#btnEnroll').onclick = enroll;
+$('#btnProbe').onclick = probe;
+$('#inThr').oninput = e=>{ S.vThr = (+e.target.value)/100; save(); updateVoiceUI(); };
+$('#swVoice').onclick = ()=>{
+  if(!S.vPrint){ closeSheet('#sheetSettings'); openSheet('#sheetVoice'); updateVoiceUI(); return; }
+  S.voiceLock = !S.voiceLock; toggleSw($('#swVoice'), S.voiceLock); save(); syncLabels();
+};
 
 load();
 if('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js').catch(()=>{});
