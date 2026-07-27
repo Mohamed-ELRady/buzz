@@ -3,12 +3,12 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
-<title>عدّاد الكلام — الكلام بفلوس</title>
+<title>Buzz — الكلام بفلوس</title>
 <meta name="theme-color" content="#0a0d0c">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<meta name="apple-mobile-web-app-title" content="عدّاد الكلام">
+<meta name="apple-mobile-web-app-title" content="Buzz">
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="apple-touch-icon" href="icon-180.png">
 <link rel="icon" href="icon-192.png">
@@ -185,7 +185,7 @@
 <body>
 
 <header>
-  <div class="brand"><span class="dot" id="dot"></span> عدّاد الكلام</div>
+  <div class="brand"><span class="dot" id="dot"></span> Buzz</div>
   <div style="display:flex;gap:8px">
     <button class="iconbtn" id="btnSound" title="الصوت">🔊</button>
     <button class="iconbtn" id="btnSettings" title="الإعدادات">⚙️</button>
@@ -326,13 +326,13 @@ const barEls = [...el.bars.children];
 
 /* ================= تخزين ================= */
 function load(){
-  try{ Object.assign(S, JSON.parse(localStorage.kalamMeter||'{}')); }catch(e){}
+  try{ Object.assign(S, JSON.parse(localStorage.buzzMeter||'{}')); }catch(e){}
   $('#inRate').value=S.rate; $('#inFlag').value=S.flag; $('#inCur').value=S.cur;
   $('#inSens').value=S.sens; $('#inAlarm').value=S.alarm;
   toggleSw($('#swSound'),S.sound); toggleSw($('#swVibe'),S.vibe); toggleSw($('#swWake'),S.wake);
   syncLabels();
 }
-function save(){ localStorage.kalamMeter = JSON.stringify(S); }
+function save(){ localStorage.buzzMeter = JSON.stringify(S); }
 function toggleSw(sw,on){ sw.classList.toggle('on',on); }
 
 function syncLabels(){
@@ -596,7 +596,7 @@ function showReceipt(){
 
   $('#receipt').innerHTML = `
     <div class="hd">
-      <b>🚕 عدّاد الكلام</b>
+      <b>🚕 Buzz</b>
       <div>فاتورة رقم #${String(Math.floor(Math.random()*9000+1000))} — ${d.toLocaleDateString('ar-EG')} ${d.toLocaleTimeString('ar-EG',{hour:'2-digit',minute:'2-digit'})}</div>
     </div>
     <div class="ln"><span>أجرة فتح العدّاد</span><span>${fmt(S.flag)}</span></div>
@@ -614,13 +614,13 @@ function showReceipt(){
 }
 
 async function share(){
-  const txt = `🚕 فاتورة عدّاد الكلام\n`+
+  const txt = `🚕 فاتورة Buzz\n`+
     `مدة الكلام: ${mmss(talkMs)} من أصل ${mmss(sessionMs)}\n`+
     `عدد الجُمل: ${segments}\n`+
     `التعريفة: ${fmt(S.rate)} ${S.cur}/دقيقة\n`+
     `الإجمالي المطلوب: ${fmt(money)} ${S.cur} 💸`;
   try{
-    if(navigator.share) await navigator.share({title:'فاتورة عدّاد الكلام', text:txt});
+    if(navigator.share) await navigator.share({title:'فاتورة Buzz', text:txt});
     else { await navigator.clipboard.writeText(txt); toast('اتنسخت الفاتورة ✅'); }
   }catch(e){}
 }
