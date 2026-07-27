@@ -48,6 +48,8 @@
     width:38px;height:38px;border-radius:12px;font-size:17px;display:grid;place-items:center;cursor:pointer;
   }
   .iconbtn:active{transform:scale(.94)}
+  .iconbtn.lang{font-size:12.5px;font-weight:800;letter-spacing:.5px;color:var(--green);
+                font-family:system-ui,-apple-system,sans-serif}
 
   /* ===== العدّاد ===== */
   .meter{
@@ -211,26 +213,27 @@
 <header>
   <div class="brand"><span class="dot" id="dot"></span> Buzz</div>
   <div style="display:flex;gap:8px">
+    <button class="iconbtn lang" id="btnLang" title="English">EN</button>
     <button class="iconbtn" id="btnSound" title="الصوت">🔊</button>
     <button class="iconbtn" id="btnSettings" title="الإعدادات">⚙️</button>
   </div>
 </header>
 
 <div class="meter" id="meter">
-  <div class="label">الحساب لحد دلوقتي</div>
+  <div class="label" data-i="label">الحساب لحد دلوقتي</div>
   <div class="amount" id="amount"><span id="amountVal">0.00</span><span class="cur" id="cur">ج.م</span></div>
-  <div class="rateline">التعريفة: <b id="rateTxt">2 ج.م / دقيقة كلام</b></div>
+  <div class="rateline"><span data-i="rate">التعريفة:</span> <b id="rateTxt">2 ج.م / دقيقة كلام</b></div>
   <div class="pend" id="pend"></div>
   <div class="stats">
-    <div class="stat"><div class="v" id="stTalk">0:00</div><div class="k">مدة الكلام</div></div>
-    <div class="stat"><div class="v" id="stTotal">0:00</div><div class="k">مدة الجلسة</div></div>
-    <div class="stat"><div class="v" id="stSeg">0</div><div class="k">عدد الجُمل</div></div>
+    <div class="stat"><div class="v" id="stTalk">0:00</div><div class="k" data-i="kTalk">مدة الكلام</div></div>
+    <div class="stat"><div class="v" id="stTotal">0:00</div><div class="k" data-i="kTotal">مدة الجلسة</div></div>
+    <div class="stat"><div class="v" id="stSeg">0</div><div class="k" data-i="kSeg">عدد الجُمل</div></div>
   </div>
 </div>
 
 <div class="vu">
   <div class="top">
-    <span>مستوى الصوت</span>
+    <span data-i="vuLevel">مستوى الصوت</span>
     <span class="state" id="state">مقفول</span>
   </div>
   <div class="bars" id="bars"></div>
@@ -244,8 +247,8 @@
 </div>
 
 <div class="actions">
-  <button class="big start" id="btnMain">ابدأ العدّاد</button>
-  <button class="big ghost" id="btnReset" disabled>تصفير</button>
+  <button class="big start" id="btnMain" data-i="btnStart">ابدأ العدّاد</button>
+  <button class="big ghost" id="btnReset" data-i="btnReset" disabled>تصفير</button>
 </div>
 
 <div class="credit">Made with <span class="heart">❤️</span> by <b>Mohamed ELRady</b></div>
@@ -253,21 +256,21 @@
 <!-- ===== الإعدادات ===== -->
 <div class="sheet" id="sheetSettings">
   <div class="card">
-    <h2>الإعدادات</h2>
-    <div class="sub">اظبط التعريفة وحساسية المايك على مزاجك</div>
+    <h2 data-i="setTitle">الإعدادات</h2>
+    <div class="sub" data-i="setSub">اظبط التعريفة وحساسية المايك على مزاجك</div>
 
     <div class="chips" id="presets"></div>
 
     <div class="row">
-      <div><div class="t">سعر الدقيقة</div><div class="d">بيتحسب على الكلام بس، مش على السكوت</div></div>
+      <div><div class="t" data-i="sRate">سعر الدقيقة</div><div class="d" data-i="sRateD">بيتحسب على الكلام بس، مش على السكوت</div></div>
       <input type="number" id="inRate" min="0" step="0.5" value="2">
     </div>
     <div class="row">
-      <div><div class="t">أجرة فتح العدّاد</div><div class="d">مبلغ ثابت أول ما يبدأ المشوار</div></div>
+      <div><div class="t" data-i="sFlag">أجرة فتح العدّاد</div><div class="d" data-i="sFlagD">مبلغ ثابت أول ما يبدأ المشوار</div></div>
       <input type="number" id="inFlag" min="0" step="1" value="5">
     </div>
     <div class="row">
-      <div><div class="t">العملة</div><div class="d"></div></div>
+      <div><div class="t" data-i="sCur">العملة</div><div class="d"></div></div>
       <select id="inCur">
         <option value="ج.م">ج.م</option>
         <option value="ر.س">ر.س</option>
@@ -278,81 +281,74 @@
       </select>
     </div>
     <div class="row">
-      <div><div class="t">حساسية المايك</div><div class="d">لو بيعدّ لوحده من غير كلام زوّدها، لو مش بيحس بالكلام قلّلها</div></div>
+      <div><div class="t" data-i="sSens">حساسية المايك</div><div class="d" data-i="sSensD">لو بيعدّ لوحده من غير كلام زوّدها، لو مش بيحس بالكلام قلّلها</div></div>
       <input type="range" id="inSens" min="4" max="30" step="1" value="17">
     </div>
     <div class="row">
-      <div><div class="t">تنبيه عند مبلغ</div><div class="d">صفّارة لما الفاتورة تعدّي الرقم ده (0 = مفيش)</div></div>
+      <div><div class="t" data-i="sAlarm">تنبيه عند مبلغ</div><div class="d" data-i="sAlarmD">صفّارة لما الفاتورة تعدّي الرقم ده (0 = مفيش)</div></div>
       <input type="number" id="inAlarm" min="0" step="10" value="50">
     </div>
     <div class="row">
-      <div><div class="t">يعدّ على صوتي أنا بس 🎙️</div><div class="d" id="vlDesc">محتاج تسجّل بصمة صوتك الأول</div></div>
+      <div><div class="t" data-i="sVoice">يعدّ على صوتي أنا بس 🎙️</div><div class="d" id="vlDesc">محتاج تسجّل بصمة صوتك الأول</div></div>
       <div class="sw" id="swVoice"></div>
     </div>
     <div class="row">
-      <div><div class="t">بصمة الصوت</div><div class="d">تسجيل، اختبار، وضبط الصرامة</div></div>
-      <button class="chip" id="btnOpenVoice">افتح</button>
+      <div><div class="t" data-i="sPrint">بصمة الصوت</div><div class="d" data-i="sPrintD">تسجيل، اختبار، وضبط الصرامة</div></div>
+      <button class="chip" id="btnOpenVoice" data-i="sOpen">افتح</button>
     </div>
     <div class="row">
-      <div><div class="t">صوت الكاشينج</div><div class="d">تكة كل ما يتحصّل مبلغ</div></div>
+      <div><div class="t" data-i="sKa">صوت الكاشينج</div><div class="d" data-i="sKaD">تكة كل ما يتحصّل مبلغ</div></div>
       <div class="sw on" id="swSound"></div>
     </div>
     <div class="row">
-      <div><div class="t">اهتزاز</div><div class="d">على الأندرويد بس</div></div>
+      <div><div class="t" data-i="sVibe">اهتزاز</div><div class="d" data-i="sVibeD">على الأندرويد بس</div></div>
       <div class="sw on" id="swVibe"></div>
     </div>
     <div class="row">
-      <div><div class="t">منع إطفاء الشاشة</div><div class="d">تفضل الشاشة نوّرة والعدّاد شغال</div></div>
+      <div><div class="t" data-i="sWake">منع إطفاء الشاشة</div><div class="d" data-i="sWakeD">تفضل الشاشة نوّرة والعدّاد شغال</div></div>
       <div class="sw on" id="swWake"></div>
     </div>
 
-    <button class="big start" id="btnCloseSettings">تمام</button>
+    <button class="big start" id="btnCloseSettings" data-i="ok">تمام</button>
   </div>
 </div>
 
 <!-- ===== بصمة الصوت ===== -->
 <div class="sheet" id="sheetVoice">
   <div class="card">
-    <h2>بصمة صوتك 🎙️</h2>
-    <div class="sub">سجّل صوتك مرة واحدة، وبعدها العدّاد يعدّ عليك إنت بس</div>
+    <h2 data-i="vTitle">بصمة صوتك 🎙️</h2>
+    <div class="sub" data-i="vSub">سجّل صوتك مرة واحدة، وبعدها العدّاد يعدّ عليك إنت بس</div>
 
     <div class="vstat" id="vStat">لسه مسجّلتش بصمة</div>
 
     <div class="vbar"><div class="vbarfill" id="vBar"></div></div>
-    <div class="vhint" id="vHint">
-      دوس «سجّل بصمتي» واقرا الكلام اللي هيظهر بصوت عادي لمدة ١٢ ثانية،
-      وإنت في نفس المكان اللي هتستخدم فيه التطبيق.
-    </div>
+    <div class="vhint" id="vHint"></div>
 
     <div class="vread" id="vRead"></div>
 
     <button class="big start" id="btnEnroll">سجّل بصمتي</button>
-    <button class="big ghost" id="btnProbe" style="width:100%;flex:none;margin-top:8px">اختبر: ده صوتي ولا لأ؟</button>
+    <button class="big ghost" id="btnProbe" data-i="vProbe" style="width:100%;flex:none;margin-top:8px">اختبر: ده صوتي ولا لأ؟</button>
 
     <div class="row" style="margin-top:14px">
-      <div><div class="t">صرامة التطابق</div><div class="d" id="thrTxt">متوازن</div></div>
+      <div><div class="t" data-i="vStrict">صرامة التطابق</div><div class="d" id="thrTxt">متوازن</div></div>
       <input type="range" id="inThr" min="40" max="80" step="1" value="60">
     </div>
 
-    <div class="vwarn">
-      التعرّف على الصوت مش مضمون ١٠٠٪ — الأصوات المتشابهة جداً (خصوصاً من نفس
-      العيلة أو نفس النوع) ممكن تتلخبط. لو حصل، زوّد الصرامة أو سجّل البصمة تاني
-      في مكان أهدى.
-    </div>
+    <div class="vwarn" data-i="vWarn"></div>
 
-    <button class="big ghost" id="btnCloseVoice" style="width:100%;flex:none;margin-top:14px">تمام</button>
+    <button class="big ghost" id="btnCloseVoice" data-i="ok" style="width:100%;flex:none;margin-top:14px">تمام</button>
   </div>
 </div>
 
 <!-- ===== الفاتورة ===== -->
 <div class="sheet" id="sheetBill">
   <div class="card">
-    <h2>الفاتورة 🧾</h2>
-    <div class="sub">المشوار خلص… تعالى نتحاسب</div>
+    <h2 data-i="billTitle">الفاتورة 🧾</h2>
+    <div class="sub" data-i="billSub">المشوار خلص… تعالى نتحاسب</div>
     <div class="receipt" id="receipt"></div>
     <div style="display:flex;gap:10px">
-      <button class="big ghost" style="flex:1" id="btnShare">مشاركة</button>
-      <button class="big start" style="flex:1.4" id="btnPay">ادفع 💸</button>
+      <button class="big ghost" style="flex:1" id="btnShare" data-i="share">مشاركة</button>
+      <button class="big start" style="flex:1.4" id="btnPay" data-i="pay">ادفع 💸</button>
     </div>
   </div>
 </div>
@@ -364,15 +360,153 @@ const S = {
   sound: true, vibe: true, wake: true,
   voiceLock: false,      // يعدّ على صاحب الصوت المسجَّل بس
   vThr: 0.60,            // عتبة التطابق
-  vPrint: null           // بصمة الصوت (256 رقم)
+  vPrint: null,          // بصمة الصوت (256 رقم)
+  lang: 'ar'
 };
 const PRESETS = [
-  {n:'هزار خفيف', r:1,  f:0},
-  {n:'تعريفة عادية', r:2,  f:5},
-  {n:'جشع 😈', r:10, f:20},
-  {n:'محامي ⚖️', r:100, f:250},
-  {n:'حماتي 🔥', r:500, f:1000},
+  {k:'light',  r:1,  f:0},
+  {k:'normal', r:2,  f:5},
+  {k:'greedy', r:10, f:20},
+  {k:'inlaw',  r:500, f:1000},
 ];
+
+/* ================= اللغات ================= */
+const T = {
+ar:{
+  dir:'rtl', otherShort:'EN', title:'Buzz — الكلام بفلوس',
+  ttlSound:'الصوت', ttlSettings:'الإعدادات', ttlLang:'English',
+  label:'الحساب لحد دلوقتي',
+  rate:'التعريفة:', ratePer:'دقيقة كلام', rateFlag:'فتح عدّاد', rateOwn:'على صوتك إنت بس 🎙️',
+  kTalk:'مدة الكلام', kTotal:'مدة الجلسة', kSeg:'عدد الجُمل',
+  vuLevel:'مستوى الصوت', stOff:'مقفول', stIdle:'ساكت', stTalk:'بيتكلم… العدّاد شغال',
+  hint:'دوس «ابدأ العدّاد» وسيب التليفون جنبك…<br>كل جملة هتتكلمها هتلاقيها هنا بسعرها 😏',
+  btnStart:'ابدأ العدّاد', btnStop:'إنهاء المشوار', btnReset:'تصفير',
+  micErr:'مقدرتش أفتح المايك. تأكد إنك سامح للموقع باستخدام الميكروفون، وإن الصفحة شغالة على <b>https</b> أو <b>localhost</b>.',
+  pending:n=>`جاري التحقق… +${n}`,
+  presets:{light:'هزار خفيف', normal:'تعريفة عادية', greedy:'جشع 😈', inlaw:'حماتي 🔥'},
+  setTitle:'الإعدادات', setSub:'اظبط التعريفة وحساسية المايك على مزاجك',
+  sRate:'سعر الدقيقة', sRateD:'بيتحسب على الكلام بس، مش على السكوت',
+  sFlag:'أجرة فتح العدّاد', sFlagD:'مبلغ ثابت أول ما يبدأ المشوار',
+  sCur:'العملة',
+  sSens:'حساسية المايك', sSensD:'لو بيعدّ لوحده من غير كلام زوّدها، لو مش بيحس بالكلام قلّلها',
+  sAlarm:'تنبيه عند مبلغ', sAlarmD:'صفّارة لما الفاتورة تعدّي الرقم ده (0 = مفيش)',
+  sVoice:'يعدّ على صوتي أنا بس 🎙️',
+  sVoiceNone:'محتاج تسجّل بصمة صوتك الأول',
+  sVoiceOn:'شغّال — أي حد تاني بيتكلم ببلاش',
+  sVoiceOff:'البصمة متسجّلة، بس الخيار مقفول',
+  sPrint:'بصمة الصوت', sPrintD:'تسجيل، اختبار، وضبط الصرامة', sOpen:'افتح',
+  sKa:'صوت الكاشينج', sKaD:'تكة كل ما يتحصّل مبلغ',
+  sVibe:'اهتزاز', sVibeD:'على الأندرويد بس',
+  sWake:'منع إطفاء الشاشة', sWakeD:'تفضل الشاشة نوّرة والعدّاد شغال',
+  ok:'تمام',
+  vTitle:'بصمة صوتك 🎙️', vSub:'سجّل صوتك مرة واحدة، وبعدها العدّاد يعدّ عليك إنت بس',
+  vNone:'لسه مسجّلتش بصمة', vHave:'البصمة متسجّلة ✅',
+  vHint:'دوس «سجّل بصمتي» واقرا الكلام اللي هيظهر بصوت عادي لمدة ١٢ ثانية، وإنت في نفس المكان اللي هتستخدم فيه التطبيق.',
+  vEnroll:'سجّل بصمتي', vReEnroll:'سجّل بصمتي من جديد', vProbe:'اختبر: ده صوتي ولا لأ؟',
+  vStrict:'صرامة التطابق',
+  vLoose:p=>`متساهل (${p}%) — يقبل بسهولة`, vBal:p=>`متوازن (${p}%)`, vTight:p=>`صارم (${p}%) — ممكن يرفضك أحياناً`,
+  vWarn:'التعرّف على الصوت مش مضمون ١٠٠٪ — الأصوات المتشابهة جداً (خصوصاً من نفس العيلة أو نفس النوع) ممكن تتلخبط. لو حصل، زوّد الصرامة أو سجّل البصمة تاني في مكان أهدى.',
+  vLoading:'بحمّل نموذج التعرّف… (أول مرة بس)',
+  vLoadFail:'مقدرتش أحمّل النموذج — اتأكد إن فيه نت',
+  vReady:n=>`استعد… ${n}`, vSpeak:'اتكلم دلوقتي 🎙️', vAnalyze:'بحلّل صوتك…',
+  vShort:s=>`سمعت ${s} ثانية كلام بس — قرّب من التليفون واتكلم متواصل`,
+  vFew:'التسجيل مش كفاية — جرّب تاني وإنت بتتكلم متواصل',
+  vDone:(q)=>`تمام ✅ بصمتك اتسجّلت — جودة التسجيل ${q}`,
+  vQ:{hi:'ممتاز', mid:'كويس', low:'مقبول'},
+  vDoneHint:(n,thr)=>`اتسجّلت من ${n} مقاطع كلام. أي جملة تطابقها <b>أعلى من ${thr}%</b> هتتحسب عليك، واللي أقل هتعدّي ببلاش.<br><br>دوس «اختبر» واتكلم — المفروض تلاقي رقمك عالي (٨٠٪ وفوق). وخلّي صاحبك يجرّب كمان، المفروض رقمه يطلع واطي.`,
+  vErr:m=>'حصلت مشكلة: '+m,
+  vMeasuring:'اتكلم دلوقتي… بقيس',
+  vScore:(p,ok)=>`تطابق ${p}% — ${ok?'صوتك ✅':'مش صوتك ❌'}`,
+  vNoSpeech:'مسمعتش كلام كفاية — قرّب من التليفون واتكلم أعلى',
+  vFinal:(p,rng,ok)=>`تطابق ${p}%${rng} — ${ok?'اتعرف عليك ✅':'مش صوتك ❌'}`,
+  vRange:(a,b)=>` (من ${a}% لـ${b}%)`,
+  readText:'الكلام في بلدنا بقى بفلوس، واللي عايز يتكلم يدفع الحساب. أنا بجرّب العدّاد ده عشان أشوف صوتي بيتحسب إزاي، ولو حد تاني اتكلم جنبي المفروض ما يتحسبش عليه ولا مليم.',
+  fSeg:n=>`جملة #${n}`, fSec:s=>`${s} ثانية`, fMatch:p=>` · تطابق ${p}%`,
+  fShort:' · قصيرة', fFailed:' · تعذّر التحقق', fFree:'مش صوتك · ببلاش',
+  tagSpeech:' 🎤 خطبة', tagBreath:' 😮 نَفَس واحد', tagFew:' 🤏 كلمتين',
+  billTitle:'الفاتورة 🧾', billSub:'المشوار خلص… تعالى نتحاسب',
+  share:'مشاركة', pay:'ادفع 💸',
+  rTitle:'🚕 Buzz', rNo:(n,d,t)=>`فاتورة رقم #${n} — ${d} ${t}`,
+  rFlag:'أجرة فتح العدّاد', rTalk:'مدة الكلام الصافي', rRate:'التعريفة', rPerMin:'دقيقة',
+  rValue:'قيمة الكلام', rSegs:'عدد الجُمل', rLongest:'أطول نَفَس من غير سكوت',
+  rSilent:'مدة السكوت (مجاناً)', rNotYou:'كلام مش بتاعك (مجاناً)', rSegUnit:'جملة',
+  rPct:'نسبة الكلام من الجلسة', rTotal:'الإجمالي',
+  rFoot:'الخدمة دي للهزار — السكوت من دهب، والكلام بقى بفلوس.',
+  v500:'يا خبر… ده مش كلام، ده استثمار عقاري 🏗️', v100:'الفم ده لازم يتفرض عليه ضرائب 💰',
+  v25:'كلام محترم، والفاتورة محترمة 😌', v5:'ماشي، لسه في حدود المعقول 🙂',
+  v0:'ما شاء الله، شخص اقتصادي في الكلام 🤐',
+  shTitle:'فاتورة Buzz',
+  shBody:(a,b,c,d,e,f)=>`🚕 فاتورة Buzz\nمدة الكلام: ${a} من أصل ${b}\nعدد الجُمل: ${c}\nالتعريفة: ${d} ${e}/دقيقة\nالإجمالي المطلوب: ${f} 💸`,
+  copied:'اتنسخت الفاتورة ✅', payMsg:'الدفع نقدي بس 😏 سلّم الكاش',
+},
+en:{
+  dir:'ltr', otherShort:'ع', title:'Buzz — talking costs money',
+  ttlSound:'Sound', ttlSettings:'Settings', ttlLang:'العربية',
+  label:'Your bill so far',
+  rate:'Rate:', ratePer:'minute of talking', rateFlag:'flag drop', rateOwn:'your voice only 🎙️',
+  kTalk:'Talk time', kTotal:'Session', kSeg:'Sentences',
+  vuLevel:'Sound level', stOff:'Off', stIdle:'Quiet', stTalk:'Talking… meter running',
+  hint:'Hit “Start meter” and leave the phone next to you…<br>Every sentence you say shows up here with its price 😏',
+  btnStart:'Start meter', btnStop:'End the ride', btnReset:'Reset',
+  micErr:'Could not open the microphone. Make sure you allowed mic access, and that the page is on <b>https</b> or <b>localhost</b>.',
+  pending:n=>`Verifying… +${n}`,
+  presets:{light:'Cheap joke', normal:'Normal fare', greedy:'Greedy 😈', inlaw:'Mother-in-law 🔥'},
+  setTitle:'Settings', setSub:'Set the fare and mic sensitivity however you like',
+  sRate:'Price per minute', sRateD:'Charged for talking only, never for silence',
+  sFlag:'Flag drop', sFlagD:'Fixed amount charged when the ride starts',
+  sCur:'Currency',
+  sSens:'Mic sensitivity', sSensD:'Counting with nobody talking? Raise it. Missing your speech? Lower it.',
+  sAlarm:'Alert at amount', sAlarmD:'Siren when the bill passes this (0 = off)',
+  sVoice:'Charge my voice only 🎙️',
+  sVoiceNone:'Record your voice print first',
+  sVoiceOn:'On — anyone else talks for free',
+  sVoiceOff:'Voice print saved, but this is switched off',
+  sPrint:'Voice print', sPrintD:'Record, test, and tune strictness', sOpen:'Open',
+  sKa:'Cha-ching sound', sKaD:'A tick every time money is charged',
+  sVibe:'Vibration', sVibeD:'Android only',
+  sWake:'Keep screen awake', sWakeD:'Screen stays on while the meter runs',
+  ok:'Done',
+  vTitle:'Your voice print 🎙️', vSub:'Record your voice once, then the meter only charges you',
+  vNone:'No voice print yet', vHave:'Voice print saved ✅',
+  vHint:'Hit “Record my print” and read the text that appears in a normal voice for 12 seconds, in the same place you’ll use the app.',
+  vEnroll:'Record my print', vReEnroll:'Record my print again', vProbe:'Test: is this my voice?',
+  vStrict:'Match strictness',
+  vLoose:p=>`Loose (${p}%) — accepts easily`, vBal:p=>`Balanced (${p}%)`, vTight:p=>`Strict (${p}%) — may reject you sometimes`,
+  vWarn:'Voice recognition is not 100% reliable — very similar voices (especially same family or same gender) can be confused. If that happens, raise the strictness or record again somewhere quieter.',
+  vLoading:'Loading the recognition model… (first time only)',
+  vLoadFail:'Could not load the model — check your connection',
+  vReady:n=>`Get ready… ${n}`, vSpeak:'Talk now 🎙️', vAnalyze:'Analysing your voice…',
+  vShort:s=>`Only heard ${s} seconds of speech — get closer and talk continuously`,
+  vFew:'Not enough recorded — try again and keep talking',
+  vDone:(q)=>`Done ✅ Voice print saved — recording quality ${q}`,
+  vQ:{hi:'excellent', mid:'good', low:'fair'},
+  vDoneHint:(n,thr)=>`Built from ${n} speech segments. Any sentence matching <b>above ${thr}%</b> gets charged to you, anything lower passes free.<br><br>Hit “Test” and talk — your number should be high (80% and up). Have a friend try too, theirs should come out low.`,
+  vErr:m=>'Something went wrong: '+m,
+  vMeasuring:'Talk now… measuring',
+  vScore:(p,ok)=>`Match ${p}% — ${ok?'your voice ✅':'not your voice ❌'}`,
+  vNoSpeech:'Did not hear enough speech — get closer and talk louder',
+  vFinal:(p,rng,ok)=>`Match ${p}%${rng} — ${ok?'recognised you ✅':'not your voice ❌'}`,
+  vRange:(a,b)=>` (${a}% to ${b}%)`,
+  readText:'Talking in this house is no longer free, and whoever wants to speak has to pay the bill. I am testing this meter to see how my voice gets charged, and if somebody else speaks next to me it should not cost them a thing.',
+  fSeg:n=>`Sentence #${n}`, fSec:s=>`${s} seconds`, fMatch:p=>` · match ${p}%`,
+  fShort:' · too short', fFailed:' · could not verify', fFree:'not you · free',
+  tagSpeech:' 🎤 a whole speech', tagBreath:' 😮 one breath', tagFew:' 🤏 a couple words',
+  billTitle:'The bill 🧾', billSub:'Ride over… let’s settle up',
+  share:'Share', pay:'Pay 💸',
+  rTitle:'🚕 Buzz', rNo:(n,d,t)=>`Invoice #${n} — ${d} ${t}`,
+  rFlag:'Flag drop', rTalk:'Net talking time', rRate:'Rate', rPerMin:'min',
+  rValue:'Talk charge', rSegs:'Sentences', rLongest:'Longest run without a pause',
+  rSilent:'Silence (free)', rNotYou:'Not your voice (free)', rSegUnit:'sentences',
+  rPct:'Talking share of session', rTotal:'Total',
+  rFoot:'This thing is a joke — silence is golden, talking now costs money.',
+  v500:'Good grief, that is not talking, that is a mortgage 🏗️', v100:'This mouth should be taxed 💰',
+  v25:'Respectable talking, respectable bill 😌', v5:'Alright, still within reason 🙂',
+  v0:'Wow, an economical speaker 🤐',
+  shTitle:'Buzz invoice',
+  shBody:(a,b,c,d,e,f)=>`🚕 Buzz invoice\nTalk time: ${a} of ${b}\nSentences: ${c}\nRate: ${d} ${e}/min\nAmount due: ${f} 💸`,
+  copied:'Invoice copied ✅', payMsg:'Cash only 😏 hand it over',
+}};
+let L = T.ar;
 
 let running=false, talking=false;
 let money=0, talkMs=0, sessionMs=0, segments=0, longestMs=0, curSegMs=0;
@@ -414,20 +548,40 @@ function load(){
   if(!S.vPrint) S.voiceLock = false;
   toggleSw($('#swVoice'), S.voiceLock);
   $('#inThr').value = Math.round(S.vThr*100);
-  updateVoiceUI();
+  applyLang();
 }
 function save(){ localStorage.buzzMeter = JSON.stringify(S); }
 function toggleSw(sw,on){ sw.classList.toggle('on',on); }
 
+/* ================= تبديل اللغة ================= */
+function applyLang(){
+  L = T[S.lang] || T.ar;
+  document.documentElement.lang = S.lang;
+  document.documentElement.dir  = L.dir;
+  document.title = L.title;
+
+  document.querySelectorAll('[data-i]').forEach(n=>{
+    const v = L[n.dataset.i];
+    if(typeof v === 'string') n.innerHTML = v;
+  });
+
+  $('#btnLang').textContent = L.otherShort;
+  $('#btnLang').title = L.ttlLang;
+  $('#btnSound').title = L.ttlSound;
+  $('#btnSettings').title = L.ttlSettings;
+  el.btnMain.textContent = running ? L.btnStop : L.btnStart;
+  el.state.textContent = running ? (talking ? L.stTalk : L.stIdle) : L.stOff;
+  if(!$('#feed').querySelector('.it')) clearFeed();
+  updateVoiceUI();
+}
+
 function syncLabels(){
   el.cur.textContent = S.cur;
-  el.rateTxt.textContent = `${fmt(S.rate)} ${S.cur} / دقيقة كلام` + (S.flag>0? ` + ${fmt(S.flag)} فتح عدّاد`:'')
-    + (S.voiceLock && S.vPrint ? ' · على صوتك إنت بس 🎙️' : '');
+  el.rateTxt.textContent = `${fmt(S.rate)} ${S.cur} / ${L.ratePer}` + (S.flag>0? ` + ${fmt(S.flag)} ${L.rateFlag}`:'')
+    + (S.voiceLock && S.vPrint ? ` · ${L.rateOwn}` : '');
   $('#btnSound').textContent = S.sound? '🔊':'🔇';
   const vd = $('#vlDesc');
-  if(vd) vd.textContent = S.vPrint
-    ? (S.voiceLock ? 'شغّال — أي حد تاني بيتكلم ببلاش' : 'البصمة متسجّلة، بس الخيار مقفول')
-    : 'محتاج تسجّل بصمة صوتك الأول';
+  if(vd) vd.textContent = S.vPrint ? (S.voiceLock ? L.sVoiceOn : L.sVoiceOff) : L.sVoiceNone;
   drawPresets();
 }
 function drawPresets(){
@@ -435,7 +589,7 @@ function drawPresets(){
   PRESETS.forEach(p=>{
     const b=document.createElement('button');
     b.className='chip'+((p.r===S.rate&&p.f===S.flag)?' sel':'');
-    b.textContent=p.n;
+    b.textContent=L.presets[p.k];
     b.onclick=()=>{ S.rate=p.r; S.flag=p.f; $('#inRate').value=p.r; $('#inFlag').value=p.f; save(); syncLabels(); blip(880,.05); };
     box.appendChild(b);
   });
@@ -659,7 +813,7 @@ function onAudio(e){
     if(talking && !enrollMode){ segBuf=[]; segLen=0; }
     if(running){
       el.meter.classList.toggle('talking', talking);
-      el.state.textContent = talking? 'بيتكلم… العدّاد شغال':'ساكت';
+      el.state.textContent = talking? L.stTalk : L.stIdle;
       el.state.classList.toggle('on', talking);
       if(talking){ segments++; curSegMs=0; el.stSeg.textContent=segments; }
       else {
@@ -675,7 +829,7 @@ function onAudio(e){
     const add = (S.rate/60) * (dt/1000);
     if(S.voiceLock && S.vPrint){
       pending += add; pendingMs += dt;          // مستنية التحقق من الصوت
-      el.pend.textContent = `جاري التحقق… +${fmt(pending)}`;
+      el.pend.textContent = L.pending(fmt(pending));
       el.pend.style.display = 'block';
     } else {
       commitMoney(add);
@@ -745,28 +899,24 @@ function addFeed(no, ms, v){
   const feed = $('#feed');
   const hint = feed.querySelector('.hint'); if(hint) hint.remove();
   const sec = ms/1000;
-  const tag = sec>20 ? ' 🎤 خطبة' : sec>10 ? ' 😮 نَفَس واحد' : sec<1.2 ? ' 🤏 كلمتين' : '';
+  const tag = sec>20 ? L.tagSpeech : sec>10 ? L.tagBreath : sec<1.2 ? L.tagFew : '';
   const it = document.createElement('div');
   it.className = 'it' + (v && v.rejected ? ' skip' : '');
 
-  let note = `${sec.toFixed(1)} ثانية`;
-  if(v && v.score != null) note += ` · تطابق ${(v.score*100).toFixed(0)}%`;
-  else if(v && v.short) note += ' · قصيرة';
-  else if(v && v.failed) note += ' · تعذّر التحقق';
+  let note = L.fSec(sec.toFixed(1));
+  if(v && v.score != null) note += L.fMatch((v.score*100).toFixed(0));
+  else if(v && v.short) note += L.fShort;
+  else if(v && v.failed) note += L.fFailed;
 
   const right = (v && v.rejected)
-    ? `<span class="r free">مش صوتك · ببلاش</span>`
+    ? `<span class="r free">${L.fFree}</span>`
     : `<span class="r">+${fmt(sec/60*S.rate)}</span>`;
 
-  it.innerHTML = `<span>جملة #${no}${tag}<div class="l">${note}</div></span>` + right;
+  it.innerHTML = `<span>${L.fSeg(no)}${tag}<div class="l">${note}</div></span>` + right;
   feed.prepend(it);
   while(feed.children.length > 40) feed.lastElementChild.remove();
 }
 /* ================= تسجيل بصمة الصوت ================= */
-const READ_TEXT = 'الكلام في بلدنا بقى بفلوس، واللي عايز يتكلم يدفع الحساب. '+
-                  'أنا بجرّب العدّاد ده عشان أشوف صوتي بيتحسب إزاي، '+
-                  'ولو حد تاني اتكلم جنبي المفروض ما يتحسبش عليه ولا مليم.';
-
 function vSet(msg, cls){
   const n = $('#vStat');
   n.textContent = msg;
@@ -776,16 +926,14 @@ function vProg(p){ $('#vBar').style.width = Math.max(0,Math.min(100,p*100)) + '%
 
 function updateVoiceUI(){
   const has = !!S.vPrint;
-  $('#btnEnroll').textContent = has ? 'سجّل بصمتي من جديد' : 'سجّل بصمتي';
+  $('#btnEnroll').textContent = has ? L.vReEnroll : L.vEnroll;
   $('#btnProbe').style.display = has ? 'block' : 'none';
-  if(has) vSet('البصمة متسجّلة ✅', 'ok');
-  else    vSet('لسه مسجّلتش بصمة');
+  if(has) vSet(L.vHave, 'ok');
+  else    vSet(L.vNone);
+  if(!enrollMode && !probeCb) $('#vHint').innerHTML = L.vHint;
   const pct = Math.round(S.vThr*100);
   $('#inThr').value = pct;
-  $('#thrTxt').textContent =
-    pct <= 50 ? `متساهل (${pct}%) — يقبل بسهولة` :
-    pct <= 65 ? `متوازن (${pct}%)` :
-                `صارم (${pct}%) — ممكن يرفضك أحياناً`;
+  $('#thrTxt').textContent = pct <= 50 ? L.vLoose(pct) : pct <= 65 ? L.vBal(pct) : L.vTight(pct);
   syncLabels();
 }
 
@@ -800,20 +948,20 @@ async function withMic(fn){
 async function enroll(){
   if(enrollMode) return;
   try{
-    vSet('بحمّل نموذج التعرّف… (أول مرة بس)', 'busy');
+    vSet(L.vLoading, 'busy');
     vProg(0);
     await loadVoiceModel(ms => vProg(Math.min(.9, ms/25000)));
   }catch(e){
-    vSet('مقدرتش أحمّل النموذج — اتأكد إن فيه نت', 'busy');
+    vSet(L.vLoadFail, 'busy');
     return;
   }
   vProg(0);
-  $('#vRead').textContent = READ_TEXT;
+  $('#vRead').textContent = L.readText;
   $('#vRead').classList.add('show');
 
   await withMic(async () => {
-    for(let i=3;i>0;i--){ vSet(`استعد… ${i}`, 'busy'); blip(660,.08); await sleep(700); }
-    vSet('اتكلم دلوقتي 🎙️', 'busy'); blip(980,.12);
+    for(let i=3;i>0;i--){ vSet(L.vReady(i), 'busy'); blip(660,.08); await sleep(700); }
+    vSet(L.vSpeak, 'busy'); blip(980,.12);
 
     enrollBuf=[]; enrollLen=0; enrollMode=true;
     const DUR = 12000, t0 = Date.now();
@@ -823,13 +971,13 @@ async function enroll(){
     }
     enrollMode = false;
     blip(520,.15);
-    vSet('بحلّل صوتك…', 'busy'); vProg(1);
+    vSet(L.vAnalyze, 'busy'); vProg(1);
 
     const audio = toSR(enrollBuf, enrollLen, ac ? ac.sampleRate : SR);
     enrollBuf=[]; enrollLen=0;
 
     if(audio.length < 5*SR){
-      vSet(`سمعت ${(audio.length/SR).toFixed(1)} ثانية كلام بس — قرّب من التليفون واتكلم متواصل`, 'busy');
+      vSet(L.vShort((audio.length/SR).toFixed(1)), 'busy');
       return;
     }
 
@@ -840,7 +988,7 @@ async function enroll(){
       if(e) embs.push(e);
     }
     if(embs.length < 2){
-      vSet('التسجيل مش كفاية — جرّب تاني وإنت بتتكلم متواصل', 'busy');
+      vSet(L.vFew, 'busy');
       return;
     }
 
@@ -855,17 +1003,13 @@ async function enroll(){
 
     S.voiceLock = true;
     save(); updateVoiceUI();
-    const quality = minLoo >= 0.85 ? 'ممتاز' : minLoo >= 0.75 ? 'كويس' : 'مقبول';
-    vSet(`تمام ✅ بصمتك اتسجّلت — جودة التسجيل ${quality}`, 'ok');
-    $('#vHint').innerHTML =
-      `اتسجّلت من ${embs.length} مقاطع كلام. أي جملة تطابقها <b>أعلى من ${(S.vThr*100).toFixed(0)}%</b> `+
-      `هتتحسب عليك، واللي أقل هتعدّي ببلاش.<br><br>`+
-      `دوس «اختبر» واتكلم — المفروض تلاقي رقمك عالي (٨٠٪ وفوق). `+
-      `وخلّي صاحبك يجرّب كمان، المفروض رقمه يطلع واطي.`;
+    const quality = minLoo >= 0.85 ? L.vQ.hi : minLoo >= 0.75 ? L.vQ.mid : L.vQ.low;
+    vSet(L.vDone(quality), 'ok');
+    $('#vHint').innerHTML = L.vDoneHint(embs.length, (S.vThr*100).toFixed(0));
     kaching();
   }).catch(e=>{
     enrollMode = false;
-    vSet('حصلت مشكلة: ' + (e.message||e), 'busy');
+    vSet(L.vErr(e.message||e), 'busy');
   });
   $('#vRead').classList.remove('show');
   vProg(0);
@@ -875,12 +1019,12 @@ async function enroll(){
 async function probe(){
   if(!S.vPrint || probeCb) return;
   try{
-    vSet('بحمّل النموذج…','busy');
+    vSet(L.vLoading,'busy');
     await loadVoiceModel();
-  }catch(e){ vSet('مقدرتش أحمّل النموذج','busy'); return; }
+  }catch(e){ vSet(L.vLoadFail,'busy'); return; }
 
   await withMic(async () => {
-    vSet('اتكلم دلوقتي… بقيس', 'busy');
+    vSet(L.vMeasuring, 'busy');
     probeCb = true;
     const t0 = Date.now();
     const scores = [];
@@ -895,18 +1039,18 @@ async function probe(){
         if(e){
           const sc = cosine(e, S.vPrint);
           scores.push(sc);
-          vSet(`تطابق ${(sc*100).toFixed(0)}% — ${sc>=S.vThr?'صوتك ✅':'مش صوتك ❌'}`, sc>=S.vThr?'ok':'busy');
+          vSet(L.vScore((sc*100).toFixed(0), sc>=S.vThr), sc>=S.vThr?'ok':'busy');
         }
       }
       vProg((Date.now()-t0)/10000);
     }
     probeCb = null; segBuf=[]; segLen=0;
-    if(!scores.length){ vSet('مسمعتش كلام كفاية — قرّب من التليفون واتكلم أعلى','busy'); return; }
+    if(!scores.length){ vSet(L.vNoSpeech,'busy'); return; }
     // الوسيط مش الأعلى: أعلى قراءة بتبقى متفائلة وتضلّلك وانت بتعاير
     const sorted = [...scores].sort((a,b)=>a-b);
     const med = sorted[Math.floor(sorted.length/2)];
-    const rng = scores.length>1 ? ` (من ${(Math.min(...scores)*100).toFixed(0)}% لـ${(Math.max(...scores)*100).toFixed(0)}%)` : '';
-    vSet(`تطابق ${(med*100).toFixed(0)}%${rng} — ${med>=S.vThr?'اتعرف عليك ✅':'مش صوتك ❌'}`, med>=S.vThr?'ok':'busy');
+    const rng = scores.length>1 ? L.vRange((Math.min(...scores)*100).toFixed(0), (Math.max(...scores)*100).toFixed(0)) : '';
+    vSet(L.vFinal((med*100).toFixed(0), rng, med>=S.vThr), med>=S.vThr?'ok':'busy');
   }).catch(()=>{ probeCb=null; });
   vProg(0);
 }
@@ -914,8 +1058,7 @@ async function probe(){
 const sleep = ms => new Promise(r=>setTimeout(r,ms));
 
 function clearFeed(){
-  $('#feed').innerHTML = '<div class="hint">دوس «ابدأ العدّاد» وسيب التليفون جنبك…<br>'+
-    'كل جملة هتتكلمها هتلاقيها هنا بسعرها 😏</div>';
+  $('#feed').innerHTML = `<div class="hint">${L.hint}</div>`;
 }
 
 function tickClock(){
@@ -930,8 +1073,7 @@ async function start(){
     await startMic();
   }catch(e){
     el.err.style.display='block';
-    el.err.innerHTML = 'مقدرتش أفتح المايك. تأكد إنك سامح للموقع باستخدام الميكروفون، '+
-      'وإن الصفحة شغالة على <b>https</b> أو <b>localhost</b>.<br><small style="color:#8b9a94">'+ (e.message||e.name) +'</small>';
+    el.err.innerHTML = L.micErr + '<br><small style="color:#8b9a94">'+ (e.message||e.name) +'</small>';
     return;
   }
   running=true; talking=false; hang=0;
@@ -945,10 +1087,10 @@ async function start(){
   clearFeed();
 
   el.dot.classList.add('live');
-  el.btnMain.textContent='إنهاء المشوار';
+  el.btnMain.textContent=L.btnStop;
   el.btnMain.classList.remove('start'); el.btnMain.classList.add('stop');
   el.btnReset.disabled=false;
-  el.state.textContent='ساكت';
+  el.state.textContent=L.stIdle;
 
   if(S.flag>0) kaching();
   timer=setInterval(tickClock,250);
@@ -962,9 +1104,9 @@ function stop(showBill=true){
   stopMic(); clearInterval(timer); releaseWake();
   el.dot.classList.remove('live');
   el.meter.classList.remove('talking');
-  el.btnMain.textContent='ابدأ العدّاد';
+  el.btnMain.textContent=L.btnStart;
   el.btnMain.classList.add('start'); el.btnMain.classList.remove('stop');
-  el.state.textContent='مقفول'; el.state.classList.remove('on');
+  el.state.textContent=L.stOff; el.state.classList.remove('on');
   barEls.forEach(b=>{ b.style.height='12%'; b.classList.remove('on','peak'); });
   el.fill.style.width='0%';
   if(showBill && (talkMs>0 || S.flag>0)) showReceipt();
@@ -990,41 +1132,35 @@ function showReceipt(){
   const pct     = sessionMs>0 ? Math.round(talkMs/sessionMs*100) : 0;
   const d = new Date();
   const verdict =
-    money>=500 ? 'يا خبر… ده مش كلام، ده استثمار عقاري 🏗️' :
-    money>=100 ? 'الفم ده لازم يتفرض عليه ضرائب 💰' :
-    money>=25  ? 'كلام محترم، والفاتورة محترمة 😌' :
-    money>=5   ? 'ماشي، لسه في حدود المعقول 🙂' :
-                 'ما شاء الله، شخص اقتصادي في الكلام 🤐';
+    money>=500 ? L.v500 : money>=100 ? L.v100 :
+    money>=25  ? L.v25  : money>=5   ? L.v5   : L.v0;
+  const loc = S.lang==='ar' ? 'ar-EG' : 'en-GB';
 
   $('#receipt').innerHTML = `
     <div class="hd">
-      <b>🚕 Buzz</b>
-      <div>فاتورة رقم #${String(Math.floor(Math.random()*9000+1000))} — ${d.toLocaleDateString('ar-EG')} ${d.toLocaleTimeString('ar-EG',{hour:'2-digit',minute:'2-digit'})}</div>
+      <b>${L.rTitle}</b>
+      <div>${L.rNo(String(Math.floor(Math.random()*9000+1000)), d.toLocaleDateString(loc), d.toLocaleTimeString(loc,{hour:'2-digit',minute:'2-digit'}))}</div>
     </div>
-    <div class="ln"><span>أجرة فتح العدّاد</span><span>${fmt(S.flag)}</span></div>
-    <div class="ln"><span>مدة الكلام الصافي</span><span>${mmss(talkMs)}</span></div>
-    <div class="ln"><span>التعريفة</span><span>${fmt(S.rate)} / دقيقة</span></div>
-    <div class="ln"><span>قيمة الكلام</span><span>${fmt(talkMin*S.rate)}</span></div>
-    <div class="ln"><span>عدد الجُمل</span><span>${segments}</span></div>
-    <div class="ln"><span>أطول نَفَس من غير سكوت</span><span>${mmss(longestMs)}</span></div>
-    <div class="ln"><span>مدة السكوت (مجاناً)</span><span>${mmss(silent)}</span></div>
-    ${S.voiceLock && S.vPrint ? `<div class="ln"><span>كلام مش بتاعك (مجاناً)</span><span>${vRejected} جملة · ${mmss(vFreeMs)}</span></div>` : ''}
-    <div class="ln"><span>نسبة الكلام من الجلسة</span><span>${pct}%</span></div>
-    <div class="ln tot"><span>الإجمالي</span><span>${fmt(money)} ${S.cur}</span></div>
-    <div class="ft">${verdict}<br>الخدمة دي للهزار — السكوت من دهب، والكلام بقى بفلوس.</div>`;
+    <div class="ln"><span>${L.rFlag}</span><span>${fmt(S.flag)}</span></div>
+    <div class="ln"><span>${L.rTalk}</span><span>${mmss(talkMs)}</span></div>
+    <div class="ln"><span>${L.rRate}</span><span>${fmt(S.rate)} / ${L.rPerMin}</span></div>
+    <div class="ln"><span>${L.rValue}</span><span>${fmt(talkMin*S.rate)}</span></div>
+    <div class="ln"><span>${L.rSegs}</span><span>${segments}</span></div>
+    <div class="ln"><span>${L.rLongest}</span><span>${mmss(longestMs)}</span></div>
+    <div class="ln"><span>${L.rSilent}</span><span>${mmss(silent)}</span></div>
+    ${S.voiceLock && S.vPrint ? `<div class="ln"><span>${L.rNotYou}</span><span>${vRejected} ${L.rSegUnit} · ${mmss(vFreeMs)}</span></div>` : ''}
+    <div class="ln"><span>${L.rPct}</span><span>${pct}%</span></div>
+    <div class="ln tot"><span>${L.rTotal}</span><span>${fmt(money)} ${S.cur}</span></div>
+    <div class="ft">${verdict}<br>${L.rFoot}</div>`;
   openSheet('#sheetBill');
   kaching();
 }
 
 async function share(){
-  const txt = `🚕 فاتورة Buzz\n`+
-    `مدة الكلام: ${mmss(talkMs)} من أصل ${mmss(sessionMs)}\n`+
-    `عدد الجُمل: ${segments}\n`+
-    `التعريفة: ${fmt(S.rate)} ${S.cur}/دقيقة\n`+
-    `الإجمالي المطلوب: ${fmt(money)} ${S.cur} 💸`;
+  const txt = L.shBody(mmss(talkMs), mmss(sessionMs), segments, fmt(S.rate), S.cur, `${fmt(money)} ${S.cur}`);
   try{
-    if(navigator.share) await navigator.share({title:'فاتورة Buzz', text:txt});
-    else { await navigator.clipboard.writeText(txt); toast('اتنسخت الفاتورة ✅'); }
+    if(navigator.share) await navigator.share({title:L.shTitle, text:txt});
+    else { await navigator.clipboard.writeText(txt); toast(L.copied); }
   }catch(e){}
 }
 function toast(msg){
@@ -1059,9 +1195,13 @@ el.btnReset.onclick = reset;
 $('#btnSettings').onclick = ()=>{ openSheet('#sheetSettings'); if(ac) blip(660,.05); };
 $('#btnCloseSettings').onclick = ()=> closeSheet('#sheetSettings');
 $('#btnSound').onclick = ()=>{ S.sound=!S.sound; toggleSw($('#swSound'),S.sound); save(); syncLabels(); };
+$('#btnLang').onclick = ()=>{
+  S.lang = S.lang === 'ar' ? 'en' : 'ar';
+  save(); applyLang(); blip(760,.06);
+};
 $('#btnShare').onclick = share;
 $('#btnPay').onclick = ()=>{
-  toast('الدفع نقدي بس 😏 سلّم الكاش');
+  toast(L.payMsg);
   vibe([40,50,40]); blip(300,.2,'sawtooth',.15);
 };
 
