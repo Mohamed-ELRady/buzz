@@ -99,6 +99,19 @@
   .stop{background:#221718;color:#ff8f8f;border:1px solid #46292b !important}
   .ghost{background:var(--panel);color:var(--dim);border:1px solid var(--line) !important;flex:0 0 84px}
 
+  .credit{
+    direction:ltr;text-align:center;margin-top:2px;
+    font-family:'Snell Roundhand','Segoe Script','Brush Script MT',cursive;
+    font-size:20px;color:var(--dim);letter-spacing:.3px;
+  }
+  .credit b{
+    font-weight:700;
+    background:linear-gradient(90deg,var(--green),var(--amber));
+    -webkit-background-clip:text;background-clip:text;color:transparent;
+  }
+  .credit .heart{display:inline-block;animation:beat 1.15s ease-in-out infinite}
+  @keyframes beat{0%,100%{transform:scale(1)}25%{transform:scale(1.28)}40%{transform:scale(1)}}
+
   /* ===== الشيتات ===== */
   .sheet{
     position:fixed;inset:0;background:rgba(4,7,6,.72);backdrop-filter:blur(6px);
@@ -209,6 +222,8 @@
   <button class="big start" id="btnMain">ابدأ العدّاد</button>
   <button class="big ghost" id="btnReset" disabled>تصفير</button>
 </div>
+
+<div class="credit">Made with <span class="heart">❤️</span> by <b>Mohamed ELRady</b></div>
 
 <!-- ===== الإعدادات ===== -->
 <div class="sheet" id="sheetSettings">
