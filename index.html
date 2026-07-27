@@ -206,6 +206,45 @@
   .feed .it.skip{opacity:.62}
   .feed .it .r.free{color:var(--dim);font-weight:600;direction:rtl;font-size:12.5px}
   @keyframes slide{from{opacity:0;transform:translateY(-6px)}}
+
+  /* ===== التاريخ ===== */
+  .htot{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:16px}
+  .htot div{background:#0c1210;border:1px solid var(--line);border-radius:12px;
+            padding:10px 6px;text-align:center}
+  .htot b{display:block;font-size:18px;font-weight:800;color:var(--amber);
+          font-variant-numeric:tabular-nums;direction:ltr}
+  .htot span{font-size:10.5px;color:var(--dim)}
+  .hchart{display:flex;align-items:flex-end;gap:3px;height:64px;margin-bottom:6px;
+          padding:0 2px;direction:ltr}
+  .hchart i{flex:1;background:var(--green);border-radius:3px 3px 0 0;min-height:2px;opacity:.85}
+  .hchart i.z{background:#1b241f}
+  .hcap{font-size:10.5px;color:var(--dim);text-align:center;margin-bottom:16px}
+  .hrow{display:flex;justify-content:space-between;align-items:center;gap:10px;
+        padding:11px 2px;border-bottom:1px solid var(--line);font-size:14px}
+  .hrow:last-of-type{border-bottom:0}
+  .hrow .hd{font-size:11.5px;color:var(--dim);margin-top:2px}
+  .hrow .hm{font-weight:800;color:var(--amber);direction:ltr;font-variant-numeric:tabular-nums}
+  .hempty{text-align:center;color:var(--dim);font-size:13.5px;padding:26px 10px;line-height:1.9}
+
+  /* ===== الحاضرين ===== */
+  .spk{display:none;background:var(--panel);border:1px solid var(--line);border-radius:18px;
+       padding:10px 12px}
+  .spk.show{display:block}
+  .spk .hd{font-size:11.5px;color:var(--dim);margin-bottom:8px;display:flex;
+           justify-content:space-between;align-items:center}
+  .spk .p{display:flex;align-items:center;gap:9px;padding:7px 2px;
+          border-bottom:1px solid var(--line)}
+  .spk .p:last-child{border-bottom:0}
+  .spk .av{width:26px;height:26px;border-radius:50%;display:grid;place-items:center;
+           font-size:11.5px;font-weight:800;color:#05140c;flex:0 0 auto}
+  .spk .nm{flex:1;font-size:14px;font-weight:600;background:none;border:0;color:var(--text);
+           font-family:inherit;padding:2px 4px;border-radius:6px;min-width:0}
+  .spk .nm:focus{outline:0;background:#0c1210}
+  .spk .mn{font-size:14px;font-weight:800;color:var(--green);direction:ltr;
+           font-variant-numeric:tabular-nums}
+  .spk .sub{display:block;font-size:10.5px;color:var(--dim);padding:0 4px}
+  .spk .bar{display:block;height:3px;background:#161d1a;border-radius:99px;margin-top:5px;overflow:hidden}
+  .spk .bar i{display:block;height:100%;border-radius:99px}
 </style>
 </head>
 <body>
@@ -214,6 +253,7 @@
   <div class="brand"><span class="dot" id="dot"></span> Buzz</div>
   <div style="display:flex;gap:8px">
     <button class="iconbtn lang" id="btnLang" title="English">EN</button>
+    <button class="iconbtn" id="btnHist" title="تاريخك">📈</button>
     <button class="iconbtn" id="btnSound" title="الصوت">🔊</button>
     <button class="iconbtn" id="btnSettings" title="الإعدادات">⚙️</button>
   </div>
@@ -241,6 +281,8 @@
 </div>
 
 <div class="err" id="err"></div>
+
+<div class="spk" id="spk"></div>
 
 <div class="feed" id="feed">
   <div class="hint">دوس «ابدأ العدّاد» وسيب التليفون جنبك…<br>كل جملة هتتكلمها هتلاقيها هنا بسعرها 😏</div>
@@ -281,16 +323,16 @@
       </select>
     </div>
     <div class="row">
-      <div><div class="t" data-i="sSens">حساسية المايك</div><div class="d" data-i="sSensD">لو بيعدّ لوحده من غير كلام زوّدها، لو مش بيحس بالكلام قلّلها</div></div>
-      <input type="range" id="inSens" min="4" max="30" step="1" value="17">
+      <div><div class="t" data-i="sSens">حساسية كشف الكلام</div><div class="d" id="sensD"></div></div>
+      <input type="range" id="inSens" min="20" max="80" step="5" value="50">
     </div>
     <div class="row">
       <div><div class="t" data-i="sAlarm">تنبيه عند مبلغ</div><div class="d" data-i="sAlarmD">صفّارة لما الفاتورة تعدّي الرقم ده (0 = مفيش)</div></div>
       <input type="number" id="inAlarm" min="0" step="10" value="50">
     </div>
-    <div class="row">
-      <div><div class="t" data-i="sVoice">يعدّ على صوتي أنا بس 🎙️</div><div class="d" id="vlDesc">محتاج تسجّل بصمة صوتك الأول</div></div>
-      <div class="sw" id="swVoice"></div>
+    <div class="row" style="display:block">
+      <div><div class="t" data-i="sMode">مين اللي يتحاسب؟</div><div class="d" id="vlDesc">محتاج تسجّل بصمة صوتك الأول</div></div>
+      <div class="chips" id="modes" style="margin:10px 0 0"></div>
     </div>
     <div class="row">
       <div><div class="t" data-i="sPrint">بصمة الصوت</div><div class="d" data-i="sPrintD">تسجيل، اختبار، وضبط الصرامة</div></div>
@@ -310,6 +352,19 @@
     </div>
 
     <button class="big start" id="btnCloseSettings" data-i="ok">تمام</button>
+  </div>
+</div>
+
+<!-- ===== التاريخ ===== -->
+<div class="sheet" id="sheetHist">
+  <div class="card">
+    <h2 data-i="hTitle">تاريخك 📈</h2>
+    <div class="sub" data-i="hSub">كل جلسة بتتحفظ لوحدها على التليفون</div>
+    <div class="htot" id="hTot"></div>
+    <div class="hchart" id="hChart"></div>
+    <div id="hList"></div>
+    <button class="big ghost" id="btnClearHist" style="width:100%;flex:none;margin-top:14px" data-i="hClear">امسح التاريخ</button>
+    <button class="big start" id="btnCloseHist" style="width:100%;margin-top:8px" data-i="ok">تمام</button>
   </div>
 </div>
 
@@ -361,7 +416,11 @@ const S = {
   voiceLock: false,      // يعدّ على صاحب الصوت المسجَّل بس
   vThr: 0.60,            // عتبة التطابق
   vPrint: null,          // بصمة الصوت (256 رقم)
-  lang: 'ar'
+  lang: 'ar',
+  billMode: 'all',       // all | owner | split
+  vadThr: 0.50,          // عتبة نموذج كشف الكلام
+  splitThr: 0.55,        // عتبة تجميع المتحدثين
+  adapt: true            // البصمة تتعلّم من الاستخدام
 };
 const PRESETS = [
   {k:'normal', r:2,  f:5},
@@ -387,12 +446,23 @@ ar:{
   sRate:'سعر الدقيقة', sRateD:'بيتحسب على الكلام بس، مش على السكوت',
   sFlag:'أجرة فتح العدّاد', sFlagD:'مبلغ ثابت أول ما يبدأ المشوار',
   sCur:'العملة',
-  sSens:'حساسية المايك', sSensD:'لو بيعدّ لوحده من غير كلام زوّدها، لو مش بيحس بالكلام قلّلها',
+  sSens:'حساسية كشف الكلام',
+  sSensD:p=>`${p}٪ — لو مش بيحس بكلامك زوّدها، ولو بيعدّ على التلفزيون قلّلها`,
+  vadOn:'نموذج عصبي شغّال ✓', vadOff:'كشف احتياطي (النموذج مش محمّل)',
   sAlarm:'تنبيه عند مبلغ', sAlarmD:'صفّارة لما الفاتورة تعدّي الرقم ده (0 = مفيش)',
-  sVoice:'يعدّ على صوتي أنا بس 🎙️',
-  sVoiceNone:'محتاج تسجّل بصمة صوتك الأول',
-  sVoiceOn:'شغّال — أي حد تاني بيتكلم ببلاش',
-  sVoiceOff:'البصمة متسجّلة، بس الخيار مقفول',
+  sMode:'مين اللي يتحاسب؟',
+  mAll:'الكل على حساب واحد', mOwner:'صوتي أنا بس 🎙️', mSplit:'كل واحد بحسابه 👥',
+  mAllD:'أي كلام يتحسب، من غير تعرّف على الصوت',
+  mOwnerD:'يتحاسب عليك إنت بس — أي حد تاني ببلاش',
+  mSplitD:'بيفصل المتحدثين لوحده ويعمل حساب لكل واحد',
+  mNeedPrint:'محتاج تسجّل بصمة صوتك الأول',
+  hTitle:'تاريخك 📈', hSub:'كل جلسة بتتحفظ لوحدها على التليفون',
+  hEmpty:'لسه مفيش جلسات محفوظة.<br>شغّل العدّاد وأنهي مشوار وهتلاقيه هنا.',
+  hSessions:'جلسة', hTalk:'إجمالي الكلام', hMoney:'إجمالي الفلوس',
+  hLast14:'آخر ١٤ يوم', hOf:'من', hPeople:'أشخاص', hClear:'امسح التاريخ',
+  hCleared:'التاريخ اتمسح ✅', hConfirm:'متأكد؟ التاريخ كله هيتمسح',
+  ttlHist:'تاريخك',
+  spYou:'إنت', spN:n=>`المتحدث ${n}`, spTitle:'الحاضرين', spRename:'اضغط على الاسم عشان تغيّره',
   sPrint:'بصمة الصوت', sPrintD:'تسجيل، اختبار، وضبط الصرامة', sOpen:'افتح',
   sKa:'صوت الكاشينج', sKaD:'تكة كل ما يتحصّل مبلغ',
   sVibe:'اهتزاز', sVibeD:'على الأندرويد بس',
@@ -429,7 +499,7 @@ ar:{
   rFlag:'أجرة فتح العدّاد', rTalk:'مدة الكلام الصافي', rRate:'التعريفة', rPerMin:'دقيقة',
   rValue:'قيمة الكلام', rSegs:'عدد الجُمل', rLongest:'أطول نَفَس من غير سكوت',
   rSilent:'مدة السكوت (مجاناً)', rNotYou:'كلام مش بتاعك (مجاناً)', rSegUnit:'جملة',
-  rPct:'نسبة الكلام من الجلسة', rTotal:'الإجمالي',
+  rPct:'نسبة الكلام من الجلسة', rTotal:'الإجمالي', rSplit:'التقسيم على الحاضرين',
   rFoot:'الخدمة دي للهزار — السكوت من دهب، والكلام بقى بفلوس.',
   v500:'يا خبر… ده مش كلام، ده استثمار عقاري 🏗️', v100:'الفم ده لازم يتفرض عليه ضرائب 💰',
   v25:'كلام محترم، والفاتورة محترمة 😌', v5:'ماشي، لسه في حدود المعقول 🙂',
@@ -454,12 +524,23 @@ en:{
   sRate:'Price per minute', sRateD:'Charged for talking only, never for silence',
   sFlag:'Flag drop', sFlagD:'Fixed amount charged when the ride starts',
   sCur:'Currency',
-  sSens:'Mic sensitivity', sSensD:'Counting with nobody talking? Raise it. Missing your speech? Lower it.',
+  sSens:'Speech detection sensitivity',
+  sSensD:p=>`${p}% — raise it if it misses your speech, lower it if it charges the TV`,
+  vadOn:'neural model active ✓', vadOff:'fallback detection (model not loaded)',
   sAlarm:'Alert at amount', sAlarmD:'Siren when the bill passes this (0 = off)',
-  sVoice:'Charge my voice only 🎙️',
-  sVoiceNone:'Record your voice print first',
-  sVoiceOn:'On — anyone else talks for free',
-  sVoiceOff:'Voice print saved, but this is switched off',
+  sMode:'Who gets charged?',
+  mAll:'Everyone on one bill', mOwner:'My voice only 🎙️', mSplit:'Split per person 👥',
+  mAllD:'Charges any speech, no voice recognition',
+  mOwnerD:'Charges you only — anyone else talks free',
+  mSplitD:'Separates speakers automatically and bills each one',
+  mNeedPrint:'Record your voice print first',
+  hTitle:'Your history 📈', hSub:'Every session saves itself on this phone',
+  hEmpty:'No saved sessions yet.<br>Run the meter and end a ride to see it here.',
+  hSessions:'sessions', hTalk:'total talking', hMoney:'total charged',
+  hLast14:'last 14 days', hOf:'of', hPeople:'people', hClear:'Clear history',
+  hCleared:'History cleared ✅', hConfirm:'Sure? This wipes all history',
+  ttlHist:'Your history',
+  spYou:'You', spN:n=>`Speaker ${n}`, spTitle:'In the room', spRename:'Tap a name to change it',
   sPrint:'Voice print', sPrintD:'Record, test, and tune strictness', sOpen:'Open',
   sKa:'Cha-ching sound', sKaD:'A tick every time money is charged',
   sVibe:'Vibration', sVibeD:'Android only',
@@ -496,7 +577,7 @@ en:{
   rFlag:'Flag drop', rTalk:'Net talking time', rRate:'Rate', rPerMin:'min',
   rValue:'Talk charge', rSegs:'Sentences', rLongest:'Longest run without a pause',
   rSilent:'Silence (free)', rNotYou:'Not your voice (free)', rSegUnit:'sentences',
-  rPct:'Talking share of session', rTotal:'Total',
+  rPct:'Talking share of session', rTotal:'Total', rSplit:'Split per person',
   rFoot:'This thing is a joke — silence is golden, talking now costs money.',
   v500:'Good grief, that is not talking, that is a mortgage 🏗️', v100:'This mouth should be taxed 💰',
   v25:'Respectable talking, respectable bill 😌', v5:'Alright, still within reason 🙂',
@@ -520,8 +601,10 @@ const MAX_UTTER = 8*SR;                 // أطول مقطع نبعته للنم
 let segBuf=[], segLen=0;                // صوت الجملة الحالية
 let pending=0, pendingMs=0;             // فلوس مستنية التحقق
 let vWorker=null, vReady=false, vLoading=false, vJobId=0;
+let vadWorker=null, vadReady=false, vadQ=[];
 let vRejected=0, vFreeMs=0;             // إحصائيات كلام مش بتاع صاحبه
 let lastOwnerAt=0;                      // آخر جملة اتأكد إنها بتاعته
+let lastSpeaker=null;                   // آخر متحدث اتعرف عليه (لوضع التقسيم)
 let enrollMode=false, enrollBuf=[], enrollLen=0, probeCb=null;
 
 /* ================= عناصر ================= */
@@ -541,15 +624,63 @@ const barEls = [...el.bars.children];
 function load(){
   try{ Object.assign(S, JSON.parse(localStorage.buzzMeter||'{}')); }catch(e){}
   $('#inRate').value=S.rate; $('#inFlag').value=S.flag; $('#inCur').value=S.cur;
-  $('#inSens').value=S.sens; $('#inAlarm').value=S.alarm;
+  $('#inAlarm').value=S.alarm;
   toggleSw($('#swSound'),S.sound); toggleSw($('#swVibe'),S.vibe); toggleSw($('#swWake'),S.wake);
   if(S.vPrint && !Array.isArray(S.vPrint)) S.vPrint = null;
-  if(!S.vPrint) S.voiceLock = false;
-  toggleSw($('#swVoice'), S.voiceLock);
+  // ترحيل الإعداد القديم (مفتاح تشغيل/إيقاف) للأوضاع الجديدة
+  if(!S.billMode) S.billMode = S.voiceLock ? 'owner' : 'all';
+  if(S.billMode === 'owner' && !S.vPrint) S.billMode = 'all';
+  S.voiceLock = (S.billMode === 'owner');
   $('#inThr').value = Math.round(S.vThr*100);
   applyLang();
+  loadPrintData();
 }
 function save(){ localStorage.buzzMeter = JSON.stringify(S); }
+
+/* ================= الذاكرة (IndexedDB) =================
+   الجلسات والبصمات المتراكمة. localStorage سايبينه للإعدادات بس
+   عشان البصمات (256 رقم للواحدة) تكبّره بسرعة. */
+let db = null;
+function openDB(){
+  if(db) return Promise.resolve(db);
+  return new Promise((res)=>{
+    let req;
+    try{ req = indexedDB.open('buzz', 1); }catch(e){ return res(null); }
+    req.onupgradeneeded = ()=>{
+      const d = req.result;
+      if(!d.objectStoreNames.contains('sessions')) d.createObjectStore('sessions',{keyPath:'id',autoIncrement:true});
+      if(!d.objectStoreNames.contains('kv'))       d.createObjectStore('kv',{keyPath:'k'});
+    };
+    req.onsuccess = ()=>{ db = req.result; res(db); };
+    req.onerror   = ()=> res(null);
+  });
+}
+function dbPut(store, val){
+  return openDB().then(d=> d && new Promise(res=>{
+    const t = d.transaction(store,'readwrite');
+    t.objectStore(store).put(val);
+    t.oncomplete = ()=>res(true); t.onerror = ()=>res(false);
+  }));
+}
+function dbGet(store, key){
+  return openDB().then(d=> d && new Promise(res=>{
+    const r = d.transaction(store,'readonly').objectStore(store).get(key);
+    r.onsuccess = ()=>res(r.result); r.onerror = ()=>res(null);
+  }));
+}
+function dbAll(store){
+  return openDB().then(d=> d ? new Promise(res=>{
+    const r = d.transaction(store,'readonly').objectStore(store).getAll();
+    r.onsuccess = ()=>res(r.result||[]); r.onerror = ()=>res([]);
+  }) : []);
+}
+function dbClear(store){
+  return openDB().then(d=> d && new Promise(res=>{
+    const t = d.transaction(store,'readwrite');
+    t.objectStore(store).clear();
+    t.oncomplete = ()=>res(true); t.onerror = ()=>res(false);
+  }));
+}
 function toggleSw(sw,on){ sw.classList.toggle('on',on); }
 
 /* ================= تبديل اللغة ================= */
@@ -564,10 +695,12 @@ function applyLang(){
     if(typeof v === 'string') n.innerHTML = v;
   });
 
+  sensLabel();
   $('#btnLang').textContent = L.otherShort;
   $('#btnLang').title = L.ttlLang;
   $('#btnSound').title = L.ttlSound;
   $('#btnSettings').title = L.ttlSettings;
+  $('#btnHist').title = L.ttlHist;
   el.btnMain.textContent = running ? L.btnStop : L.btnStart;
   el.state.textContent = running ? (talking ? L.stTalk : L.stIdle) : L.stOff;
   if(!$('#feed').querySelector('.it')) clearFeed();
@@ -577,12 +710,36 @@ function applyLang(){
 function syncLabels(){
   el.cur.textContent = S.cur;
   el.rateTxt.textContent = `${fmt(S.rate)} ${S.cur} / ${L.ratePer}` + (S.flag>0? ` + ${fmt(S.flag)} ${L.rateFlag}`:'')
-    + (S.voiceLock && S.vPrint ? ` · ${L.rateOwn}` : '');
+    + (S.billMode==='owner' && S.vPrint ? ` · ${L.rateOwn}` : '')
+    + (S.billMode==='split' ? ` · ${L.mSplit}` : '');
   $('#btnSound').textContent = S.sound? '🔊':'🔇';
-  const vd = $('#vlDesc');
-  if(vd) vd.textContent = S.vPrint ? (S.voiceLock ? L.sVoiceOn : L.sVoiceOff) : L.sVoiceNone;
+  drawModes();
   drawPresets();
 }
+const MODES = [
+  {k:'all',   t:'mAll',   d:'mAllD'},
+  {k:'owner', t:'mOwner', d:'mOwnerD'},
+  {k:'split', t:'mSplit', d:'mSplitD'},
+];
+function drawModes(){
+  const box = $('#modes'); if(!box) return;
+  box.innerHTML='';
+  MODES.forEach(m=>{
+    const b = document.createElement('button');
+    b.className = 'chip' + (S.billMode===m.k ? ' sel' : '');
+    b.textContent = L[m.t];
+    b.onclick = ()=>{
+      if(m.k==='owner' && !S.vPrint){ closeSheet('#sheetSettings'); openSheet('#sheetVoice'); updateVoiceUI(); return; }
+      S.billMode = m.k; S.voiceLock = (m.k==='owner');
+      save(); syncLabels(); blip(880,.05);
+    };
+    box.appendChild(b);
+  });
+  const cur = MODES.find(m=>m.k===S.billMode) || MODES[0];
+  const vd = $('#vlDesc');
+  if(vd) vd.textContent = (S.billMode==='owner' && !S.vPrint) ? L.mNeedPrint : L[cur.d];
+}
+
 function drawPresets(){
   const box=$('#presets'); box.innerHTML='';
   PRESETS.forEach(p=>{
@@ -657,12 +814,163 @@ self.onmessage = async (ev) => {
 };
 `;
 
+/* ===== كشف الكلام: Silero VAD في worker مستقل =====
+   مستقل عن worker البصمة عن قصد — البصمة بتاخد ~350ms، ولو الاتنين في نفس
+   الـ worker الكشف هيقف لحظة الحساب ونضيّع كلام. */
+const VAD_URL = 'https://huggingface.co/onnx-community/silero-vad/resolve/main/onnx/model.onnx';
+const ORT_URL = 'https://cdn.jsdelivr.net/npm/onnxruntime-web@1.20.1/dist/';
+const VAD_SRC = `
+import * as ort from '${ORT_URL}ort.min.mjs';
+ort.env.wasm.wasmPaths = '${ORT_URL}';
+ort.env.wasm.numThreads = 1;
+let sess=null, state=null, sr=null;
+const fresh = () => new ort.Tensor('float32', new Float32Array(2*128), [2,1,128]);
+self.onmessage = async (e) => {
+  const m = e.data;
+  try{
+    if(m.type === 'load'){
+      sess = await ort.InferenceSession.create('${VAD_URL}', { executionProviders:['wasm'] });
+      state = fresh();
+      sr = new ort.Tensor('int64', BigInt64Array.from([16000n]), []);
+      self.postMessage({type:'ready'});
+    } else if(m.type === 'reset'){
+      if(sess) state = fresh();
+    } else if(m.type === 'frames' && sess){
+      const pcm = m.pcm;
+      let p = 0;
+      for(let o=0; o+512 <= pcm.length; o += 512){
+        const r = await sess.run({ input:new ort.Tensor('float32', pcm.slice(o,o+512), [1,512]), state, sr });
+        state = r.stateN;
+        p = Math.max(p, r.output.data[0]);        // أعلى احتمال في البلوك
+      }
+      self.postMessage({type:'p', p});
+    }
+  }catch(err){
+    self.postMessage({type:'fail', msg:String(err && err.message || err)});
+  }
+};
+`;
+
+function startVad(){
+  if(vadWorker) return;
+  try{
+    vadWorker = new Worker(URL.createObjectURL(new Blob([VAD_SRC],{type:'text/javascript'})), {type:'module'});
+  }catch(e){ return; }
+  vadWorker.onmessage = ev=>{
+    const m = ev.data;
+    if(m.type === 'ready'){ vadReady = true; vadQ = []; }
+    else if(m.type === 'p'){ onVadResult(m.p); }
+    else if(m.type === 'fail'){ vadReady = false; vadQ = []; }   // نرجع للكشف بالطاقة
+  };
+  vadWorker.onerror = ()=>{ vadReady = false; vadQ = []; };
+  vadWorker.postMessage({type:'load'});
+}
+
 function cosine(a,b){ let s=0; for(let i=0;i<a.length;i++) s += a[i]*b[i]; return s; }
-function centroid(list){
+function centroid(list, weights){
   const c = new Array(list[0].length).fill(0);
-  for(const e of list) for(let i=0;i<c.length;i++) c[i] += e[i]/list.length;
+  let tw = 0;
+  list.forEach((e,i)=>{ const w = weights ? weights[i] : 1; tw += w;
+    for(let j=0;j<c.length;j++) c[j] += e[j]*w; });
+  for(let j=0;j<c.length;j++) c[j] /= (tw||1);
   const n = Math.hypot(...c) || 1;
   return c.map(x=>x/n);
+}
+
+/* ============ تجميع المتحدثين ============
+   تجميع جشع مباشر: كل جملة تتقارن بمراكز المجموعات الموجودة، تنضم لأقربها
+   لو عدّت العتبة، وإلا تفتح مجموعة جديدة. بيشتغل لحظياً من غير ما نستنى
+   الجلسة تخلص، والبصمات دي بتتحسب أصلاً فالتكلفة صفر. */
+let speakers = [];
+
+function assignSpeaker(emb){
+  let best = -1, bestScore = -1;
+  speakers.forEach((sp,i)=>{
+    const s = cosine(emb, sp.emb);
+    if(s > bestScore){ bestScore = s; best = i; }
+  });
+
+  let sp;
+  if(best >= 0 && bestScore >= S.splitThr){
+    sp = speakers[best];
+    sp.embs.push(emb);
+    if(sp.embs.length > 12) sp.embs.shift();
+    sp.emb = centroid(sp.embs);          // المركز بيتحدّث مع كل جملة
+    sp.n++;
+  } else {
+    sp = { id:speakers.length+1, name:null, emb:emb.slice(), embs:[emb],
+           n:1, talkMs:0, segs:0, money:0, owner:false };
+    speakers.push(sp);
+  }
+  // صاحب التليفون: المجموعة اللي مركزها يطابق البصمة المسجّلة
+  if(S.vPrint) sp.owner = cosine(sp.emb, S.vPrint) >= S.vThr;
+  return sp;
+}
+
+function speakerName(sp){
+  if(sp.name) return sp.name;
+  if(sp.owner) return L.spYou;
+  return L.spN(sp.id);
+}
+
+const SPK_COLORS = ['#39e17c','#ffb02e','#5ab7ff','#ff7ad9','#ffe066','#8affc1'];
+const spkColor = i => SPK_COLORS[i % SPK_COLORS.length];
+
+function renderSpeakers(){
+  const box = $('#spk');
+  const on = S.billMode==='split' && speakers.length>0;
+  box.classList.toggle('show', on);
+  if(!on){ box.innerHTML=''; return; }
+
+  const top = Math.max(...speakers.map(s=>s.money), 0.01);
+  box.innerHTML = `<div class="hd"><span>${L.spTitle} (${speakers.length})</span><span>${L.spRename}</span></div>` +
+    speakers.map((sp,i)=>`
+      <div class="p">
+        <span class="av" style="background:${spkColor(i)}">${sp.id}</span>
+        <span style="flex:1;min-width:0">
+          <input class="nm" data-sp="${sp.id}" value="${speakerName(sp).replace(/"/g,'&quot;')}">
+          <span class="sub">${mmss(sp.talkMs)} · ${sp.segs} ${L.rSegUnit}</span>
+          <span class="bar"><i style="width:${(sp.money/top*100).toFixed(0)}%;background:${spkColor(i)}"></i></span>
+        </span>
+        <span class="mn">${fmt(sp.money)}</span>
+      </div>`).join('');
+
+  box.querySelectorAll('.nm').forEach(inp=>{
+    inp.onchange = ()=>{
+      const sp = speakers.find(s=>s.id === +inp.dataset.sp);
+      if(sp) sp.name = inp.value.trim() || null;
+    };
+  });
+}
+
+/* ============ بصمة بتتعلّم مع الاستخدام ============ */
+let vBase = null;      // بصمات التسجيل الأصلي
+let vAdapt = [];       // بصمات موثوقة اتجمّعت مع الاستخدام
+
+async function loadPrintData(){
+  const b = await dbGet('kv','vBase'); vBase = b ? b.v : null;
+  const a = await dbGet('kv','vAdapt'); vAdapt = a ? a.v : [];
+}
+
+/* بنضيف الجملة للبصمة بس لو تطابقها مريح جداً، ومع سقف انحراف عن
+   الأصل عشان البصمة ما تزحفش بالتدريج لحد صوته قريب. */
+async function adaptPrint(emb, score){
+  if(!S.adapt || !vBase || !vBase.length) return false;
+  if(score < S.vThr + 0.15) return false;
+
+  vAdapt.push(Array.from(emb));
+  if(vAdapt.length > 20) vAdapt.shift();
+
+  const list = vBase.concat(vAdapt);
+  const w = vBase.map(()=>2).concat(vAdapt.map(()=>1));   // التسجيل الأصلي أثقل
+  const cand = centroid(list, w);
+
+  const orig = centroid(vBase);
+  if(cosine(cand, orig) < 0.85){ vAdapt.pop(); return false; }   // انحراف كبير — نرفض
+
+  S.vPrint = cand; save();
+  await dbPut('kv',{k:'vAdapt', v:vAdapt});
+  return true;
 }
 
 function loadVoiceModel(onProgress){
@@ -724,7 +1032,9 @@ async function startMic(){
   proc.onaudioprocess = onAudio;
 
   noiseFloor = -70; hang = 0; hitStreak = 0;
-  segBuf=[]; segLen=0;
+  segBuf=[]; segLen=0; vadQ=[];
+  startVad();
+  if(vadReady) vadWorker.postMessage({type:'reset'});   // الحالة الداخلية للنموذج
 }
 
 /* تحويل لـ16 كيلوهرتز لو المتصفح مدّانا معدل تاني */
@@ -752,6 +1062,8 @@ function stopMic(){
 }
 
 /* ============ قلب التول: قياس الصوت + حساب الفلوس ============ */
+/* onAudio بتقيس المستوى للعرض بس، وبتبعت الصوت لنموذج الكشف.
+   القرار الفعلي بيتاخد في processBlock لما نتيجة النموذج ترجع. */
 function onAudio(e){
   if(!analyser) return;
 
@@ -760,17 +1072,25 @@ function onAudio(e){
   for(let i=0;i<buf.length;i++) sum += buf[i]*buf[i];
   const rms = Math.sqrt(sum/buf.length);
   const db  = 20*Math.log10(rms+1e-9);              // تقريباً -100 .. 0
-  const dt  = e.inputBuffer.duration*1000;          // ≈46ms لكل بلوك
+  const dt  = e.inputBuffer.duration*1000;          // ≈128ms لكل بلوك على 16k
 
-  // أرضية الضوضاء: تنزل بسرعة نسبياً (150ms) وتطلع ببطء (12s).
-  // الحد الأدنى -68 بدل -85 عشان في السكوت التام الأرضية ما تهبطش لحد
-  // إن أي همسة أو خبطة بسيطة تبقى "أعلى منها بكتير" وتتحسب كلام غلط.
+  lastLevel = Math.max(0, Math.min(1,(db+70)/55));
+
+  const audio = new Float32Array(buf);
+
+  if(vadReady){
+    // الطابور بيحافظ على الترتيب لأن الـ worker بيرد بنفس التسلسل
+    if(vadQ.length < 12) vadQ.push({audio, dt});
+    vadWorker.postMessage({type:'frames', pcm:new Float32Array(buf)});
+    lastThr = S.vadThr;
+    return;
+  }
+
+  /* ===== الخطة البديلة: الكشف بالطاقة لو النموذج مقدرش يحمّل ===== */
   const k = db < noiseFloor ? (1-Math.exp(-dt/150)) : (1-Math.exp(-dt/12000));
   noiseFloor += k*(db-noiseFloor);
   noiseFloor = Math.max(-68, Math.min(-25, noiseFloor));
 
-  // نسبة الطاقة في نطاق الصوت البشري (~85–3400Hz) لرفض الرعشة والخبط والهواء.
-  // لازم نحوّل الديسيبل لطاقة خطية الأول، وإلا النسبة بتبقى مضلِّلة.
   analyser.getFloatFrequencyData(fd);
   const hz = (ac.sampleRate/2)/fd.length;
   const lo = Math.max(1, Math.floor(85/hz)), hi = Math.min(fd.length-1, Math.ceil(3400/hz));
@@ -781,17 +1101,24 @@ function onAudio(e){
     if(i>=lo && i<=hi) voice += p;
   }
   const ratio = all>0 ? voice/all : 1;
+  lastThr = Math.max(0, Math.min(1,((noiseFloor+S.sens)+70)/55));
 
-  lastLevel = Math.max(0, Math.min(1,(db+70)/55));
-  lastThr   = Math.max(0, Math.min(1,((noiseFloor+S.sens)+70)/55));
-
-  // كلام؟ لازم يعدّي العتبة + طاقته في نطاق الصوت البشري
   const isHit = (db > noiseFloor + S.sens) && ratio > 0.30;
   hitStreak = isHit ? hitStreak+1 : 0;
-  // لازم الصوت يستمر ~90ms (بلوكين) قبل ما يتحسب كلام، عشان طقة أو خبطة
-  // لحظية ما تشغّلش الحساب فوراً
-  if(hitStreak >= 2) hang = 380;
-  else hang = Math.max(0, hang - dt);               // تعليق عشان السكتات بين الكلمات
+  processBlock(audio, dt, hitStreak >= 2);
+}
+
+/* نتيجة نموذج الكشف رجعت → شغّل آلة الحالة على البلوك المقابل */
+function onVadResult(p){
+  const item = vadQ.shift();
+  if(!item) return;
+  // عتبتين: أصعب في البدء وأسهل في الاستمرار، عشان الجملة ما تتقطّعش
+  const thr = talking ? Math.max(0.2, S.vadThr - 0.15) : S.vadThr;
+  processBlock(item.audio, item.dt, p >= thr);
+}
+
+function processBlock(buf, dt, isSpeech){
+  hang = isSpeech ? 380 : Math.max(0, hang - dt);   // تعليق عشان السكتات بين الكلمات
   const nowTalking = hang > 0;
 
   // خزّن الصوت الخام: التسجيل والاختبار لازم يشتغلوا حتى لو العدّاد نفسه
@@ -803,7 +1130,7 @@ function onAudio(e){
     }
   } else if(probeCb && nowTalking){
     if(segLen < MAX_UTTER*2){ segBuf.push(new Float32Array(buf)); segLen += buf.length; }
-  } else if(running && S.voiceLock && S.vPrint && nowTalking){
+  } else if(running && needsVoiceCheck() && nowTalking){
     if(segLen < MAX_UTTER*2){ segBuf.push(new Float32Array(buf)); segLen += buf.length; }
   }
 
@@ -826,7 +1153,7 @@ function onAudio(e){
   if(running && talking){
     talkMs += dt; curSegMs += dt;
     const add = (S.rate/60) * (dt/1000);
-    if(S.voiceLock && S.vPrint){
+    if(needsVoiceCheck()){
       pending += add; pendingMs += dt;          // مستنية التحقق من الصوت
       el.pend.textContent = L.pending(fmt(pending));
       el.pend.style.display = 'block';
@@ -837,6 +1164,13 @@ function onAudio(e){
   }
 }
 
+/* هل الجملة محتاجة تتعرض على نموذج البصمة؟ */
+function needsVoiceCheck(){
+  if(S.billMode === 'split') return true;                 // لازم نعرف مين اتكلم
+  if(S.billMode === 'owner') return !!S.vPrint;           // لازم نتأكد إنه هو
+  return false;                                           // الكل على حساب واحد
+}
+
 function commitMoney(add){
   money += add;
   if(money >= nextTick){ nextTick = Math.floor(money) + 1; kaching(); vibe(18); }
@@ -845,9 +1179,9 @@ function commitMoney(add){
   el.amount.classList.toggle('hot', S.alarm>0 && money>=S.alarm);
 }
 
-/* الجملة خلصت: نتحقق من صاحبها ونحصّل أو نسيب */
+/* الجملة خلصت: نحدّد صاحبها ونحصّل عليه */
 async function endUtterance(no, ms){
-  if(!(S.voiceLock && S.vPrint)){ addFeed(no, ms); return; }
+  if(!needsVoiceCheck()){ addFeed(no, ms); return; }
 
   const amount = pending, heldMs = pendingMs;
   pending = 0; pendingMs = 0;
@@ -858,24 +1192,49 @@ async function endUtterance(no, ms){
 
   // أقل من 0.9 ثانية مش كفاية للحكم — نكمّل على آخر حكم لو كان قريب
   if(clip.length < 0.9*SR){
-    const recentOwner = Date.now() - lastOwnerAt < 4000;
-    if(recentOwner){ commitMoney(amount); addFeed(no, ms, {score:null, short:true}); }
-    else { vRejected++; vFreeMs += heldMs; addFeed(no, ms, {rejected:true, short:true}); }
+    const recent = Date.now() - lastOwnerAt < 4000;
+    if(S.billMode === 'split'){
+      const sp = recent && lastSpeaker ? lastSpeaker : null;
+      chargeSpeaker(sp, amount, heldMs);
+      commitMoney(amount);
+      addFeed(no, ms, {speaker:sp, short:true});
+    } else if(recent){
+      commitMoney(amount); addFeed(no, ms, {score:null, short:true});
+    } else {
+      vRejected++; vFreeMs += heldMs; addFeed(no, ms, {rejected:true, short:true});
+    }
     return;
   }
 
   const emb = await embed(clip, no);
   if(!emb){ commitMoney(amount); addFeed(no, ms, {score:null, failed:true}); return; }
 
+  if(S.billMode === 'split'){
+    const sp = assignSpeaker(emb);
+    lastSpeaker = sp; lastOwnerAt = Date.now();
+    chargeSpeaker(sp, amount, heldMs);
+    commitMoney(amount);
+    addFeed(no, ms, {speaker:sp});
+    renderSpeakers();
+    return;
+  }
+
+  // وضع «صوتي أنا بس»
   const score = cosine(emb, S.vPrint);
   if(score >= S.vThr){
     lastOwnerAt = Date.now();
     commitMoney(amount);
     addFeed(no, ms, {score});
+    adaptPrint(emb, score);              // الجمل الواثقة بتقوّي البصمة
   } else {
     vRejected++; vFreeMs += heldMs;
     addFeed(no, ms, {score, rejected:true});
   }
+}
+
+function chargeSpeaker(sp, amount, heldMs){
+  if(!sp) return;
+  sp.money += amount; sp.talkMs += heldMs; sp.segs++;
 }
 
 /* ================= الرسم فقط ================= */
@@ -893,6 +1252,48 @@ function loop(){
   el.amountVal.textContent = fmt(money);
 }
 
+/* ================= شاشة التاريخ ================= */
+async function showHistory(){
+  openSheet('#sheetHist');
+  const all = (await dbAll('sessions')).sort((a,b)=>b.endedAt-a.endedAt);
+
+  if(!all.length){
+    $('#hTot').innerHTML=''; $('#hChart').innerHTML='';
+    $('#hList').innerHTML = `<div class="hempty">${L.hEmpty}</div>`;
+    return;
+  }
+
+  const totMoney = all.reduce((s,x)=>s+x.money,0);
+  const totTalk  = all.reduce((s,x)=>s+x.talkMs,0);
+  $('#hTot').innerHTML =
+    `<div><b>${all.length}</b><span>${L.hSessions}</span></div>`+
+    `<div><b>${mmss(totTalk)}</b><span>${L.hTalk}</span></div>`+
+    `<div><b>${fmt(totMoney)}</b><span>${L.hMoney}</span></div>`;
+
+  // آخر 14 يوم
+  const day = 864e5, today = new Date(); today.setHours(0,0,0,0);
+  const buckets = new Array(14).fill(0);
+  all.forEach(x=>{
+    const i = 13 - Math.floor((today.getTime() - new Date(x.endedAt).setHours(0,0,0,0))/day);
+    if(i>=0 && i<14) buckets[i] += x.money;
+  });
+  const top = Math.max(...buckets, 0.01);
+  $('#hChart').innerHTML = buckets.map(v=>
+    `<i class="${v>0?'':'z'}" style="height:${v>0?Math.max(6,v/top*100):3}%"></i>`).join('');
+
+  const loc = S.lang==='ar' ? 'ar-EG' : 'en-GB';
+  $('#hList').innerHTML = `<div class="hcap">${L.hLast14}</div>` + all.slice(0,40).map(x=>{
+    const d = new Date(x.endedAt);
+    const who = x.speakers && x.speakers.length>1
+      ? ` · ${x.speakers.length} ${L.hPeople}` : '';
+    return `<div class="hrow">
+      <span>${d.toLocaleDateString(loc,{day:'numeric',month:'short'})} ${d.toLocaleTimeString(loc,{hour:'2-digit',minute:'2-digit'})}
+        <div class="hd">${mmss(x.talkMs)} ${L.hOf} ${mmss(x.sessionMs)} · ${x.segments} ${L.rSegUnit}${who}</div></span>
+      <span class="hm">${fmt(x.money)} ${x.cur||''}</span>
+    </div>`;
+  }).join('');
+}
+
 /* سجل الجُمل */
 function addFeed(no, ms, v){
   const feed = $('#feed');
@@ -903,6 +1304,7 @@ function addFeed(no, ms, v){
   it.className = 'it' + (v && v.rejected ? ' skip' : '');
 
   let note = L.fSec(sec.toFixed(1));
+  if(v && v.speaker) note = speakerName(v.speaker) + ' · ' + note;
   if(v && v.score != null) note += L.fMatch((v.score*100).toFixed(0));
   else if(v && v.short) note += L.fShort;
   else if(v && v.failed) note += L.fFailed;
@@ -911,7 +1313,10 @@ function addFeed(no, ms, v){
     ? `<span class="r free">${L.fFree}</span>`
     : `<span class="r">+${fmt(sec/60*S.rate)}</span>`;
 
-  it.innerHTML = `<span>${L.fSeg(no)}${tag}<div class="l">${note}</div></span>` + right;
+  const dot = v && v.speaker
+    ? `<span style="display:inline-block;width:7px;height:7px;border-radius:50%;margin-left:6px;background:${spkColor(speakers.indexOf(v.speaker))}"></span>`
+    : '';
+  it.innerHTML = `<span>${dot}${L.fSeg(no)}${tag}<div class="l">${note}</div></span>` + right;
   feed.prepend(it);
   while(feed.children.length > 40) feed.lastElementChild.remove();
 }
@@ -992,6 +1397,10 @@ async function enroll(){
     }
 
     S.vPrint = centroid(embs);
+    vBase = embs.map(e=>Array.from(e));   // نحتفظ بالأصل عشان التعلّم المستمر
+    vAdapt = [];
+    await dbPut('kv',{k:'vBase',  v:vBase});
+    await dbPut('kv',{k:'vAdapt', v:[]});
 
     // العتبة بالتحقق المتقاطع: كل مقطع يتقارن بمركز مبني من الباقي بدونه.
     // لو قارنّاه بمركز هو نفسه جزء منه الرقم بيطلع متفائل والعتبة تبقى صارمة وترفض صاحبها.
@@ -1079,8 +1488,9 @@ async function start(){
   money = S.flag; nextTick = Math.floor(money)+1; alarmFired=false;
   talkMs=0; segments=0; longestMs=0; curSegMs=0;
   pending=0; pendingMs=0; vRejected=0; vFreeMs=0; lastOwnerAt=0;
+  speakers=[]; lastSpeaker=null; renderSpeakers();
   el.pend.style.display='none';
-  if(S.voiceLock && S.vPrint) loadVoiceModel().catch(()=>{});
+  if(needsVoiceCheck()) loadVoiceModel().catch(()=>{});
   startedAt=Date.now(); lastFrame=performance.now();
   el.stSeg.textContent='0'; el.stTalk.textContent='0:00';
   clearFeed();
@@ -1108,7 +1518,19 @@ function stop(showBill=true){
   el.state.textContent=L.stOff; el.state.classList.remove('on');
   barEls.forEach(b=>{ b.style.height='12%'; b.classList.remove('on','peak'); });
   el.fill.style.width='0%';
+  if(talkMs>0 || S.flag>0) saveSession();
   if(showBill && (talkMs>0 || S.flag>0)) showReceipt();
+}
+
+/* الجلسة بتتحفظ لوحدها من غير أي خطوة من المستخدم */
+function saveSession(){
+  dbPut('sessions', {
+    startedAt: startedAt, endedAt: Date.now(),
+    money, cur: S.cur, rate: S.rate, flag: S.flag, mode: S.billMode,
+    talkMs, sessionMs, segments, longestMs,
+    rejected: vRejected, freeMs: vFreeMs,
+    speakers: speakers.map(s=>({name:speakerName(s), talkMs:s.talkMs, segs:s.segs, money:s.money, owner:s.owner}))
+  }).catch(()=>{});
 }
 
 function reset(){
@@ -1116,6 +1538,7 @@ function reset(){
   nextTick=Math.floor(money)+1; alarmFired=false;
   talkMs=0; segments=0; longestMs=0; curSegMs=0; startedAt=Date.now();
   pending=0; pendingMs=0; vRejected=0; vFreeMs=0; lastOwnerAt=0;
+  speakers=[]; lastSpeaker=null; renderSpeakers();
   el.pend.style.display='none';
   el.amountVal.textContent=fmt(money); el.stTalk.textContent='0:00';
   el.stTotal.textContent='0:00'; el.stSeg.textContent='0';
@@ -1147,15 +1570,37 @@ function showReceipt(){
     <div class="ln"><span>${L.rSegs}</span><span>${segments}</span></div>
     <div class="ln"><span>${L.rLongest}</span><span>${mmss(longestMs)}</span></div>
     <div class="ln"><span>${L.rSilent}</span><span>${mmss(silent)}</span></div>
-    ${S.voiceLock && S.vPrint ? `<div class="ln"><span>${L.rNotYou}</span><span>${vRejected} ${L.rSegUnit} · ${mmss(vFreeMs)}</span></div>` : ''}
+    ${S.billMode==='owner' && S.vPrint ? `<div class="ln"><span>${L.rNotYou}</span><span>${vRejected} ${L.rSegUnit} · ${mmss(vFreeMs)}</span></div>` : ''}
     <div class="ln"><span>${L.rPct}</span><span>${pct}%</span></div>
     <div class="ln tot"><span>${L.rTotal}</span><span>${fmt(money)} ${S.cur}</span></div>
+    ${splitRows()}
     <div class="ft">${verdict}<br>${L.rFoot}</div>`;
   openSheet('#sheetBill');
   kaching();
 }
 
+/* تقسيم الفاتورة على الحاضرين */
+function splitRows(){
+  if(S.billMode!=='split' || !speakers.length) return '';
+  const rows = speakers
+    .slice().sort((a,b)=>b.money-a.money)
+    .map(sp=>`<div class="ln"><span>${speakerName(sp)} · ${mmss(sp.talkMs)}</span><span>${fmt(sp.money)}</span></div>`)
+    .join('');
+  return `<div class="ln" style="border-top:1px dashed #2b3630;margin-top:9px;padding-top:10px;
+            font-weight:800;color:var(--green)"><span>${L.rSplit}</span><span></span></div>` + rows;
+}
+
 async function share(){
+  if(S.billMode==='split' && speakers.length){
+    const lines = speakers.slice().sort((a,b)=>b.money-a.money)
+      .map(sp=>`${speakerName(sp)}: ${fmt(sp.money)} ${S.cur} (${mmss(sp.talkMs)})`).join('\n');
+    const t = `${L.shTitle}\n${L.rSplit}\n${lines}\n${L.rTotal}: ${fmt(money)} ${S.cur} 💸`;
+    try{
+      if(navigator.share) await navigator.share({title:L.shTitle, text:t});
+      else { await navigator.clipboard.writeText(t); toast(L.copied); }
+    }catch(e){}
+    return;
+  }
   const txt = L.shBody(mmss(talkMs), mmss(sessionMs), segments, fmt(S.rate), S.cur, `${fmt(money)} ${S.cur}`);
   try{
     if(navigator.share) await navigator.share({title:L.shTitle, text:txt});
@@ -1194,6 +1639,14 @@ el.btnReset.onclick = reset;
 $('#btnSettings').onclick = ()=>{ openSheet('#sheetSettings'); if(ac) blip(660,.05); };
 $('#btnCloseSettings').onclick = ()=> closeSheet('#sheetSettings');
 $('#btnSound').onclick = ()=>{ S.sound=!S.sound; toggleSw($('#swSound'),S.sound); save(); syncLabels(); };
+$('#btnHist').onclick = ()=>{ showHistory(); blip(700,.05); };
+$('#btnCloseHist').onclick = ()=> closeSheet('#sheetHist');
+$('#btnClearHist').onclick = async ()=>{
+  if(!confirm(L.hConfirm)) return;
+  await dbClear('sessions');
+  toast(L.hCleared);
+  showHistory();
+};
 $('#btnLang').onclick = ()=>{
   S.lang = S.lang === 'ar' ? 'en' : 'ar';
   save(); applyLang(); blip(760,.06);
@@ -1207,7 +1660,18 @@ $('#btnPay').onclick = ()=>{
 $('#inRate').oninput = e=>{ S.rate=Math.max(0,+e.target.value||0); save(); syncLabels(); };
 $('#inFlag').oninput = e=>{ S.flag=Math.max(0,+e.target.value||0); save(); syncLabels(); };
 $('#inCur').onchange = e=>{ S.cur=e.target.value; save(); syncLabels(); };
-$('#inSens').oninput = e=>{ S.sens=+e.target.value; save(); };
+$('#inSens').oninput = e=>{
+  // السلايدر بالحساسية، والنموذج بالعتبة — فالعلاقة عكسية
+  const p = +e.target.value;
+  S.vadThr = 1 - p/100;
+  S.sens = Math.round(30 - (p/100)*16);          // للكشف الاحتياطي
+  save(); sensLabel();
+};
+function sensLabel(){
+  const p = Math.round((1 - S.vadThr)*100);
+  $('#inSens').value = p;
+  $('#sensD').textContent = L.sSensD(p) + ' · ' + (vadReady ? L.vadOn : L.vadOff);
+}
 $('#inAlarm').oninput = e=>{ S.alarm=Math.max(0,+e.target.value||0); save(); };
 $('#swSound').onclick = ()=>{ S.sound=!S.sound; toggleSw($('#swSound'),S.sound); save(); syncLabels(); };
 $('#swVibe').onclick  = ()=>{ S.vibe=!S.vibe;  toggleSw($('#swVibe'),S.vibe); save(); vibe(30); };
@@ -1219,11 +1683,6 @@ $('#btnCloseVoice').onclick = ()=>{ closeSheet('#sheetVoice'); openSheet('#sheet
 $('#btnEnroll').onclick = enroll;
 $('#btnProbe').onclick = probe;
 $('#inThr').oninput = e=>{ S.vThr = (+e.target.value)/100; save(); updateVoiceUI(); };
-$('#swVoice').onclick = ()=>{
-  if(!S.vPrint){ closeSheet('#sheetSettings'); openSheet('#sheetVoice'); updateVoiceUI(); return; }
-  S.voiceLock = !S.voiceLock; toggleSw($('#swVoice'), S.voiceLock); save(); syncLabels();
-};
-
 load();
 if('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js').catch(()=>{});
 </script>
