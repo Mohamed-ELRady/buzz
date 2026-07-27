@@ -323,6 +323,10 @@
       </select>
     </div>
     <div class="row">
+      <div><div class="t" data-i="sAutoCalib">معايرة تلقائية للمكان</div><div class="d" data-i="sAutoCalibD">٣ ثواني بسمع ضوضاء المكان قبل ما يبدأ يحاسب، ويظبط الحساسية لوحده</div></div>
+      <div class="sw on" id="swCalib"></div>
+    </div>
+    <div class="row">
       <div><div class="t" data-i="sSens">حساسية كشف الكلام</div><div class="d" id="sensD"></div></div>
       <input type="range" id="inSens" min="20" max="80" step="5" value="50">
     </div>
@@ -423,6 +427,7 @@ const S = {
   lang: 'ar',
   billMode: 'all',       // all | owner | split
   vadThr: 0.50,          // عتبة نموذج كشف الكلام
+  autoCalib: true,       // معايرة تلقائية للمكان وقت البدء
   splitThr: 0.55,        // عتبة تجميع المتحدثين
   adapt: true            // البصمة تتعلّم من الاستخدام
 };
@@ -466,6 +471,9 @@ ar:{
   hLast14:'آخر ١٤ يوم', hOf:'من', hPeople:'أشخاص', hClear:'امسح التاريخ',
   hCleared:'التاريخ اتمسح ✅', hConfirm:'متأكد؟ التاريخ كله هيتمسح',
   ttlHist:'تاريخك',
+  sAutoCalib:'معايرة تلقائية للمكان',
+  sAutoCalibD:'٣ ثواني بسمع ضوضاء المكان قبل ما يبدأ يحاسب، ويظبط الحساسية لوحده',
+  calibrating:'بيسمع المكان… 🎧', calibrated:'اتظبط على المكان ✓',
   sKnown:'الأشخاص المحفوظين', sForget:'نسيان الكل',
   knownDesc:n=>`${n} شخص اتعرّف عليهم قبل كده — بيفتكرهم بين الجلسات`,
   forgetConfirm:'متأكد؟ التطبيق هينسى كل الأشخاص المحفوظين ويعتبر أي حد جديد المرة الجاية.',
@@ -548,6 +556,9 @@ en:{
   hLast14:'last 14 days', hOf:'of', hPeople:'people', hClear:'Clear history',
   hCleared:'History cleared ✅', hConfirm:'Sure? This wipes all history',
   ttlHist:'Your history',
+  sAutoCalib:'Auto room calibration',
+  sAutoCalibD:'3s listening to the room\'s noise before charging starts, tunes sensitivity on its own',
+  calibrating:'Listening to the room… 🎧', calibrated:'Calibrated to this room ✓',
   sKnown:'Saved people', sForget:'Forget all',
   knownDesc:n=>`${n} people recognised before — remembered across sessions`,
   forgetConfirm:'Sure? The app will forget everyone saved and treat everyone as new next time.',
@@ -638,6 +649,7 @@ function load(){
   $('#inRate').value=S.rate; $('#inFlag').value=S.flag; $('#inCur').value=S.cur;
   $('#inAlarm').value=S.alarm;
   toggleSw($('#swSound'),S.sound); toggleSw($('#swVibe'),S.vibe); toggleSw($('#swWake'),S.wake);
+  toggleSw($('#swCalib'),S.autoCalib);
   if(S.vPrint && !Array.isArray(S.vPrint)) S.vPrint = null;
   // ترحيل الإعداد القديم (مفتاح تشغيل/إيقاف) للأوضاع الجديدة
   if(!S.billMode) S.billMode = S.voiceLock ? 'owner' : 'all';
@@ -1161,9 +1173,35 @@ function onAudio(e){
 function onVadResult(p){
   const item = vadQ.shift();
   if(!item) return;
+  if(calibrating) calibSamples.push(p);
   // عتبتين: أصعب في البدء وأسهل في الاستمرار، عشان الجملة ما تتقطّعش
   const thr = talking ? Math.max(0.2, S.vadThr - 0.15) : S.vadThr;
   processBlock(item.audio, item.dt, p >= thr);
+}
+
+/* ============ معايرة تلقائية للمكان ============
+   قبل ما نبدأ نحاسب، بنسمع المكان لثواني قليلة ونقيس احتمال النموذج
+   على ضوضاء المكان نفسها (مروحة، تكييف، دوشة)، وبعدين نحط العتبة
+   فوق أعلى ٩٠٪ من القراءات دي بهامش أمان — عشان الضوضاء دي محديدة
+   ما تتحسبش كلام غلط. */
+let calibrating = false, calibSamples = [];
+
+async function calibrate(ms=3000){
+  if(!S.autoCalib) return;
+  for(let i=0;i<6 && !vadReady;i++) await sleep(200);   // مهلة قصيرة، مش انتظار طويل
+  if(!vadReady) return;                                  // النموذج مش جاهز — نسيب الإعداد الحالي
+
+  calibrating = true; calibSamples = [];
+  el.state.textContent = L.calibrating;
+  await sleep(ms);
+  calibrating = false;
+
+  if(calibSamples.length < 10) return;   // صوت مش كفاية للحكم
+  const sorted = [...calibSamples].sort((a,b)=>a-b);
+  const p90 = sorted[Math.floor(sorted.length*0.9)];
+  setVadThr(Math.max(0.25, Math.min(0.75, p90 + 0.15)));
+  sensLabel();
+  toast(L.calibrated);
 }
 
 function processBlock(buf, dt, isSpeech){
@@ -1535,6 +1573,11 @@ async function start(){
     el.err.innerHTML = L.micErr + '<br><small style="color:#8b9a94">'+ (e.message||e.name) +'</small>';
     return;
   }
+
+  el.btnMain.disabled = true;
+  await calibrate();
+  el.btnMain.disabled = false;
+
   running=true; talking=false; hang=0;
   money = S.flag; nextTick = Math.floor(money)+1; alarmFired=false;
   talkMs=0; segments=0; longestMs=0; curSegMs=0;
@@ -1718,13 +1761,14 @@ $('#btnPay').onclick = ()=>{
 $('#inRate').oninput = e=>{ S.rate=Math.max(0,+e.target.value||0); save(); syncLabels(); };
 $('#inFlag').oninput = e=>{ S.flag=Math.max(0,+e.target.value||0); save(); syncLabels(); };
 $('#inCur').onchange = e=>{ S.cur=e.target.value; save(); syncLabels(); };
-$('#inSens').oninput = e=>{
+function setVadThr(thr){
   // السلايدر بالحساسية، والنموذج بالعتبة — فالعلاقة عكسية
-  const p = +e.target.value;
-  S.vadThr = 1 - p/100;
+  S.vadThr = Math.max(0.15, Math.min(0.85, thr));
+  const p = Math.round((1 - S.vadThr)*100);
   S.sens = Math.round(30 - (p/100)*16);          // للكشف الاحتياطي
-  save(); sensLabel();
-};
+  save();
+}
+$('#inSens').oninput = e=>{ setVadThr(1 - (+e.target.value)/100); sensLabel(); };
 function sensLabel(){
   const p = Math.round((1 - S.vadThr)*100);
   $('#inSens').value = p;
@@ -1734,6 +1778,7 @@ $('#inAlarm').oninput = e=>{ S.alarm=Math.max(0,+e.target.value||0); save(); };
 $('#swSound').onclick = ()=>{ S.sound=!S.sound; toggleSw($('#swSound'),S.sound); save(); syncLabels(); };
 $('#swVibe').onclick  = ()=>{ S.vibe=!S.vibe;  toggleSw($('#swVibe'),S.vibe); save(); vibe(30); };
 $('#swWake').onclick  = ()=>{ S.wake=!S.wake;  toggleSw($('#swWake'),S.wake); save(); S.wake?requestWake():releaseWake(); };
+$('#swCalib').onclick = ()=>{ S.autoCalib=!S.autoCalib; toggleSw($('#swCalib'),S.autoCalib); save(); };
 
 /* بصمة الصوت */
 $('#btnOpenVoice').onclick = ()=>{ closeSheet('#sheetSettings'); openSheet('#sheetVoice'); updateVoiceUI(); };

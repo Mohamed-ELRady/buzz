@@ -1,5 +1,5 @@
 // كاش بسيط عشان التطبيق يشتغل من غير نت بعد أول فتحة
-const CACHE = 'buzz-v8';
+const CACHE = 'buzz-v9';
 const FILES = [
   './',
   './index.html',
