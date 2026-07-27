@@ -1,0 +1,663 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
+<title>عدّاد الكلام — الكلام بفلوس</title>
+<meta name="theme-color" content="#0a0d0c">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="عدّاد الكلام">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="icon-180.png">
+<link rel="icon" href="icon-192.png">
+<style>
+  :root{
+    --bg:#0a0d0c;
+    --panel:#111614;
+    --line:#1e2622;
+    --amber:#ffb02e;
+    --green:#39e17c;
+    --red:#ff4d4d;
+    --dim:#7e8c86;
+    --text:#e9f2ee;
+  }
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+  html,body{margin:0;height:100%}
+  body{
+    background:
+      radial-gradient(120% 80% at 50% -10%, #14201b 0%, var(--bg) 55%),
+      var(--bg);
+    color:var(--text);
+    font-family:"SF Arabic","Noto Sans Arabic",system-ui,-apple-system,"Segoe UI",Tahoma,sans-serif;
+    display:flex;flex-direction:column;
+    padding:max(12px,env(safe-area-inset-top)) 12px max(12px,env(safe-area-inset-bottom));
+    gap:10px;
+    overflow:hidden;
+    user-select:none;-webkit-user-select:none;
+  }
+
+  header{display:flex;align-items:center;justify-content:space-between;gap:8px}
+  .brand{display:flex;align-items:center;gap:8px;font-weight:700;font-size:16px}
+  .brand .dot{width:9px;height:9px;border-radius:50%;background:var(--dim);transition:.2s}
+  .brand .dot.live{background:var(--red);box-shadow:0 0 12px var(--red);animation:pulse 1.1s infinite}
+  @keyframes pulse{50%{opacity:.35}}
+  .iconbtn{
+    background:var(--panel);border:1px solid var(--line);color:var(--dim);
+    width:38px;height:38px;border-radius:12px;font-size:17px;display:grid;place-items:center;cursor:pointer;
+  }
+  .iconbtn:active{transform:scale(.94)}
+
+  /* ===== العدّاد ===== */
+  .meter{
+    background:linear-gradient(180deg,#0e1412,#0a0f0d);
+    border:1px solid var(--line);border-radius:22px;
+    padding:18px 16px 14px;text-align:center;position:relative;overflow:hidden;
+    box-shadow:inset 0 0 60px rgba(57,225,124,.05);
+  }
+  .meter.talking{border-color:rgba(57,225,124,.45);box-shadow:inset 0 0 70px rgba(57,225,124,.13)}
+  .meter .label{font-size:12px;color:var(--dim);letter-spacing:.5px}
+  .amount{
+    font-variant-numeric:tabular-nums;font-feature-settings:"tnum";
+    font-size:clamp(48px,17vw,86px);font-weight:800;line-height:1.05;
+    color:var(--amber);text-shadow:0 0 26px rgba(255,176,46,.35);
+    direction:ltr;display:flex;align-items:baseline;justify-content:center;gap:8px;
+    transition:color .2s;
+  }
+  .amount .cur{font-size:.32em;font-weight:600;color:var(--dim);text-shadow:none}
+  .amount.hot{color:var(--red);text-shadow:0 0 30px rgba(255,77,77,.45)}
+  .rateline{margin-top:2px;font-size:13px;color:var(--dim)}
+  .rateline b{color:var(--green);font-weight:700}
+
+  .stats{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:14px}
+  .stat{background:#0c1210;border:1px solid var(--line);border-radius:12px;padding:8px 4px}
+  .stat .v{font-size:17px;font-weight:700;font-variant-numeric:tabular-nums;direction:ltr}
+  .stat .k{font-size:10.5px;color:var(--dim);margin-top:2px}
+
+  /* ===== مؤشر الصوت ===== */
+  .vu{background:var(--panel);border:1px solid var(--line);border-radius:18px;padding:12px 14px}
+  .vu .top{display:flex;justify-content:space-between;align-items:center;font-size:12px;color:var(--dim);margin-bottom:8px}
+  .vu .top .state{font-weight:700;color:var(--dim)}
+  .vu .top .state.on{color:var(--green)}
+  .bars{display:flex;gap:3px;height:38px;align-items:flex-end}
+  .bars i{flex:1;background:#1b241f;border-radius:3px;height:12%;transition:height .07s linear,background .12s}
+  .bars i.on{background:var(--green)}
+  .bars i.on.peak{background:var(--amber)}
+  .thresh{position:relative;height:6px;margin-top:9px;background:#161d1a;border-radius:99px;overflow:hidden}
+  .thresh .fill{position:absolute;inset:0 auto 0 0;width:0%;background:linear-gradient(90deg,var(--green),var(--amber));border-radius:99px;transition:width .07s linear}
+
+  /* ===== الأزرار ===== */
+  .actions{display:flex;gap:10px;margin-top:auto}
+  button.big{
+    flex:1;border:0;border-radius:18px;padding:16px 10px;font-size:17px;font-weight:800;
+    font-family:inherit;cursor:pointer;transition:transform .08s,opacity .2s;
+  }
+  button.big:active{transform:scale(.97)}
+  button.big:disabled{opacity:.4}
+  .start{background:linear-gradient(180deg,#3ff08a,#1fbc63);color:#04170d}
+  .stop{background:#221718;color:#ff8f8f;border:1px solid #46292b !important}
+  .ghost{background:var(--panel);color:var(--dim);border:1px solid var(--line) !important;flex:0 0 84px}
+
+  /* ===== الشيتات ===== */
+  .sheet{
+    position:fixed;inset:0;background:rgba(4,7,6,.72);backdrop-filter:blur(6px);
+    display:flex;align-items:flex-end;justify-content:center;z-index:50;
+    opacity:0;pointer-events:none;transition:opacity .22s;
+  }
+  .sheet.show{opacity:1;pointer-events:auto}
+  .card{
+    background:var(--panel);border:1px solid var(--line);border-bottom:0;
+    border-radius:24px 24px 0 0;width:100%;max-width:520px;
+    padding:18px 18px calc(18px + env(safe-area-inset-bottom));
+    transform:translateY(24px);transition:transform .26s cubic-bezier(.2,.9,.3,1);
+    max-height:88vh;overflow:auto;
+  }
+  .sheet.show .card{transform:none}
+  .card h2{margin:0 0 4px;font-size:19px}
+  .card .sub{color:var(--dim);font-size:13px;margin-bottom:14px}
+  .row{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:12px 0;border-bottom:1px solid var(--line)}
+  .row:last-of-type{border-bottom:0}
+  .row .t{font-size:14.5px}
+  .row .d{font-size:11.5px;color:var(--dim);margin-top:2px}
+  input[type=number],select{
+    background:#0c1210;border:1px solid var(--line);color:var(--text);border-radius:10px;
+    padding:9px 10px;font-size:15px;font-family:inherit;width:110px;text-align:center;direction:ltr;
+  }
+  input[type=range]{width:130px;accent-color:var(--green)}
+  .chips{display:flex;gap:7px;flex-wrap:wrap;margin:10px 0 4px}
+  .chip{
+    background:#0c1210;border:1px solid var(--line);color:var(--dim);
+    border-radius:99px;padding:8px 13px;font-size:13px;font-family:inherit;cursor:pointer;
+  }
+  .chip.sel{border-color:var(--green);color:var(--green);background:rgba(57,225,124,.08)}
+  .sw{width:50px;height:29px;border-radius:99px;background:#232c27;position:relative;cursor:pointer;flex:0 0 auto;transition:.2s}
+  .sw::after{content:"";position:absolute;top:3px;right:3px;width:23px;height:23px;border-radius:50%;background:#5c6b64;transition:.2s}
+  .sw.on{background:rgba(57,225,124,.25)}
+  .sw.on::after{transform:translateX(-21px);background:var(--green)}
+  .card button.big{width:100%;margin-top:16px}
+
+  /* ===== الفاتورة ===== */
+  .receipt{
+    background:#0c1210;border:1px dashed #2b3630;border-radius:14px;padding:16px;margin-top:6px;
+    font-variant-numeric:tabular-nums;
+  }
+  .receipt .hd{text-align:center;border-bottom:1px dashed #2b3630;padding-bottom:10px;margin-bottom:10px}
+  .receipt .hd b{font-size:16px}
+  .receipt .hd div{font-size:11px;color:var(--dim);margin-top:3px}
+  .receipt .ln{display:flex;justify-content:space-between;font-size:13.5px;padding:5px 0}
+  .receipt .ln span:last-child{direction:ltr}
+  .receipt .tot{border-top:1px dashed #2b3630;margin-top:9px;padding-top:10px;font-size:19px;font-weight:800;color:var(--amber)}
+  .receipt .ft{text-align:center;font-size:11px;color:var(--dim);margin-top:12px;line-height:1.7}
+  .err{background:rgba(255,77,77,.1);border:1px solid rgba(255,77,77,.3);color:#ffb4b4;
+       border-radius:12px;padding:12px;font-size:13.5px;line-height:1.6;margin-top:10px;display:none}
+
+  /* ===== سجل الجُمل ===== */
+  .feed{
+    flex:1;min-height:70px;background:var(--panel);border:1px solid var(--line);
+    border-radius:18px;padding:10px 12px;overflow-y:auto;-webkit-overflow-scrolling:touch;
+  }
+  .feed .hint{color:var(--dim);font-size:13px;text-align:center;padding:18px 8px;line-height:1.9}
+  .feed .it{
+    display:flex;justify-content:space-between;align-items:center;gap:8px;
+    padding:8px 2px;border-bottom:1px solid var(--line);font-size:13.5px;
+    animation:slide .25s ease-out;
+  }
+  .feed .it:last-child{border-bottom:0}
+  .feed .it .l{color:var(--dim);font-size:12px}
+  .feed .it .r{color:var(--green);font-weight:700;font-variant-numeric:tabular-nums;direction:ltr}
+  @keyframes slide{from{opacity:0;transform:translateY(-6px)}}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="brand"><span class="dot" id="dot"></span> عدّاد الكلام</div>
+  <div style="display:flex;gap:8px">
+    <button class="iconbtn" id="btnSound" title="الصوت">🔊</button>
+    <button class="iconbtn" id="btnSettings" title="الإعدادات">⚙️</button>
+  </div>
+</header>
+
+<div class="meter" id="meter">
+  <div class="label">الحساب لحد دلوقتي</div>
+  <div class="amount" id="amount"><span id="amountVal">0.00</span><span class="cur" id="cur">ج.م</span></div>
+  <div class="rateline">التعريفة: <b id="rateTxt">2 ج.م / دقيقة كلام</b></div>
+  <div class="stats">
+    <div class="stat"><div class="v" id="stTalk">0:00</div><div class="k">مدة الكلام</div></div>
+    <div class="stat"><div class="v" id="stTotal">0:00</div><div class="k">مدة الجلسة</div></div>
+    <div class="stat"><div class="v" id="stSeg">0</div><div class="k">عدد الجُمل</div></div>
+  </div>
+</div>
+
+<div class="vu">
+  <div class="top">
+    <span>مستوى الصوت</span>
+    <span class="state" id="state">مقفول</span>
+  </div>
+  <div class="bars" id="bars"></div>
+  <div class="thresh"><div class="fill" id="fill"></div></div>
+</div>
+
+<div class="err" id="err"></div>
+
+<div class="feed" id="feed">
+  <div class="hint">دوس «ابدأ العدّاد» وسيب التليفون جنبك…<br>كل جملة هتتكلمها هتلاقيها هنا بسعرها 😏</div>
+</div>
+
+<div class="actions">
+  <button class="big start" id="btnMain">ابدأ العدّاد</button>
+  <button class="big ghost" id="btnReset" disabled>تصفير</button>
+</div>
+
+<!-- ===== الإعدادات ===== -->
+<div class="sheet" id="sheetSettings">
+  <div class="card">
+    <h2>الإعدادات</h2>
+    <div class="sub">اظبط التعريفة وحساسية المايك على مزاجك</div>
+
+    <div class="chips" id="presets"></div>
+
+    <div class="row">
+      <div><div class="t">سعر الدقيقة</div><div class="d">بيتحسب على الكلام بس، مش على السكوت</div></div>
+      <input type="number" id="inRate" min="0" step="0.5" value="2">
+    </div>
+    <div class="row">
+      <div><div class="t">أجرة فتح العدّاد</div><div class="d">مبلغ ثابت أول ما يبدأ المشوار</div></div>
+      <input type="number" id="inFlag" min="0" step="1" value="5">
+    </div>
+    <div class="row">
+      <div><div class="t">العملة</div><div class="d"></div></div>
+      <select id="inCur">
+        <option value="ج.م">ج.م</option>
+        <option value="ر.س">ر.س</option>
+        <option value="د.إ">د.إ</option>
+        <option value="د.ك">د.ك</option>
+        <option value="$">$</option>
+        <option value="€">€</option>
+      </select>
+    </div>
+    <div class="row">
+      <div><div class="t">حساسية المايك</div><div class="d">لو بيعدّ لوحده من غير كلام زوّدها، لو مش بيحس بالكلام قلّلها</div></div>
+      <input type="range" id="inSens" min="4" max="30" step="1" value="17">
+    </div>
+    <div class="row">
+      <div><div class="t">تنبيه عند مبلغ</div><div class="d">صفّارة لما الفاتورة تعدّي الرقم ده (0 = مفيش)</div></div>
+      <input type="number" id="inAlarm" min="0" step="10" value="50">
+    </div>
+    <div class="row">
+      <div><div class="t">صوت الكاشينج</div><div class="d">تكة كل ما يتحصّل مبلغ</div></div>
+      <div class="sw on" id="swSound"></div>
+    </div>
+    <div class="row">
+      <div><div class="t">اهتزاز</div><div class="d">على الأندرويد بس</div></div>
+      <div class="sw on" id="swVibe"></div>
+    </div>
+    <div class="row">
+      <div><div class="t">منع إطفاء الشاشة</div><div class="d">تفضل الشاشة نوّرة والعدّاد شغال</div></div>
+      <div class="sw on" id="swWake"></div>
+    </div>
+
+    <button class="big start" id="btnCloseSettings">تمام</button>
+  </div>
+</div>
+
+<!-- ===== الفاتورة ===== -->
+<div class="sheet" id="sheetBill">
+  <div class="card">
+    <h2>الفاتورة 🧾</h2>
+    <div class="sub">المشوار خلص… تعالى نتحاسب</div>
+    <div class="receipt" id="receipt"></div>
+    <div style="display:flex;gap:10px">
+      <button class="big ghost" style="flex:1" id="btnShare">مشاركة</button>
+      <button class="big start" style="flex:1.4" id="btnPay">ادفع 💸</button>
+    </div>
+  </div>
+</div>
+
+<script>
+/* ================= الحالة ================= */
+const S = {
+  rate: 2, flag: 5, cur: 'ج.م', sens: 17, alarm: 50,
+  sound: true, vibe: true, wake: true
+};
+const PRESETS = [
+  {n:'هزار خفيف', r:1,  f:0},
+  {n:'تعريفة عادية', r:2,  f:5},
+  {n:'جشع 😈', r:10, f:20},
+  {n:'محامي ⚖️', r:100, f:250},
+  {n:'حماتي 🔥', r:500, f:1000},
+];
+
+let running=false, talking=false;
+let money=0, talkMs=0, sessionMs=0, segments=0, longestMs=0, curSegMs=0;
+let startedAt=0, lastFrame=0, lastTalkEdge=0, nextTick=0, alarmFired=false;
+let ac=null, analyser=null, stream=null, srcNode=null, raf=null, timer=null, wakeLock=null;
+let proc=null, muteGain=null, fd=null, noiseFloor=-70, hang=0;
+let lastLevel=0, lastThr=0, hitStreak=0;
+
+/* ================= عناصر ================= */
+const $ = s=>document.querySelector(s);
+const el = {
+  dot:$('#dot'), meter:$('#meter'), amountVal:$('#amountVal'), amount:$('#amount'), cur:$('#cur'),
+  rateTxt:$('#rateTxt'), stTalk:$('#stTalk'), stTotal:$('#stTotal'), stSeg:$('#stSeg'),
+  bars:$('#bars'), fill:$('#fill'), state:$('#state'), err:$('#err'),
+  btnMain:$('#btnMain'), btnReset:$('#btnReset')
+};
+
+const BARS = 28;
+for(let i=0;i<BARS;i++) el.bars.appendChild(document.createElement('i'));
+const barEls = [...el.bars.children];
+
+/* ================= تخزين ================= */
+function load(){
+  try{ Object.assign(S, JSON.parse(localStorage.kalamMeter||'{}')); }catch(e){}
+  $('#inRate').value=S.rate; $('#inFlag').value=S.flag; $('#inCur').value=S.cur;
+  $('#inSens').value=S.sens; $('#inAlarm').value=S.alarm;
+  toggleSw($('#swSound'),S.sound); toggleSw($('#swVibe'),S.vibe); toggleSw($('#swWake'),S.wake);
+  syncLabels();
+}
+function save(){ localStorage.kalamMeter = JSON.stringify(S); }
+function toggleSw(sw,on){ sw.classList.toggle('on',on); }
+
+function syncLabels(){
+  el.cur.textContent = S.cur;
+  el.rateTxt.textContent = `${fmt(S.rate)} ${S.cur} / دقيقة كلام` + (S.flag>0? ` + ${fmt(S.flag)} فتح عدّاد`:'');
+  $('#btnSound').textContent = S.sound? '🔊':'🔇';
+  drawPresets();
+}
+function drawPresets(){
+  const box=$('#presets'); box.innerHTML='';
+  PRESETS.forEach(p=>{
+    const b=document.createElement('button');
+    b.className='chip'+((p.r===S.rate&&p.f===S.flag)?' sel':'');
+    b.textContent=p.n;
+    b.onclick=()=>{ S.rate=p.r; S.flag=p.f; $('#inRate').value=p.r; $('#inFlag').value=p.f; save(); syncLabels(); blip(880,.05); };
+    box.appendChild(b);
+  });
+}
+
+/* ================= أدوات ================= */
+const fmt = n => (Math.round(n*100)/100).toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2}).replace(/\.00$/,'.00');
+const mmss = ms => {
+  const t=Math.floor(ms/1000);
+  return `${Math.floor(t/60)}:${String(t%60).padStart(2,'0')}`;
+};
+
+/* ================= الأصوات ================= */
+let sfx=null;
+function sfxCtx(){                       // كونتكست مستقل للأصوات عشان يفضل شغال بعد قفل المايك
+  const C = window.AudioContext||window.webkitAudioContext;
+  if(!C) return null;
+  if(!sfx || sfx.state==='closed') sfx = new C();
+  if(sfx.state==='suspended') sfx.resume().catch(()=>{});
+  return sfx;
+}
+function blip(freq=740, dur=.07, type='square', gain=.12){
+  if(!S.sound) return;
+  const c = sfxCtx(); if(!c) return;
+  const o=c.createOscillator(), g=c.createGain();
+  o.type=type; o.frequency.value=freq;
+  g.gain.setValueAtTime(gain, c.currentTime);
+  g.gain.exponentialRampToValueAtTime(.0001, c.currentTime+dur);
+  o.connect(g).connect(c.destination); o.start(); o.stop(c.currentTime+dur);
+}
+function kaching(){
+  if(!S.sound) return;
+  blip(1180,.09,'triangle',.16);
+  setTimeout(()=>blip(1560,.16,'triangle',.14),70);
+}
+function alarmSound(){
+  [0,300,600].forEach(d=>setTimeout(()=>{ blip(500,.14,'sawtooth',.18); setTimeout(()=>blip(360,.16,'sawtooth',.18),140); },d));
+}
+function vibe(ms){ if(S.vibe && navigator.vibrate) navigator.vibrate(ms); }
+
+/* ================= المايك ================= */
+async function startMic(){
+  stream = await navigator.mediaDevices.getUserMedia({
+    audio:{ echoCancellation:false, noiseSuppression:false, autoGainControl:false }
+  });
+  ac = new (window.AudioContext||window.webkitAudioContext)();
+  await ac.resume();
+  srcNode = ac.createMediaStreamSource(stream);
+  analyser = ac.createAnalyser();
+  analyser.fftSize = 2048;
+  analyser.smoothingTimeConstant = 0.55;
+  fd = new Float32Array(analyser.frequencyBinCount);
+
+  // الحسبة بتتم جوه معالج الصوت مش في rAF، عشان تفضل شغالة والشاشة مطفية
+  proc = ac.createScriptProcessor(2048, 1, 1);
+  muteGain = ac.createGain(); muteGain.gain.value = 0;   // مننا مش عايزين نسمع نفسنا
+  srcNode.connect(analyser);
+  analyser.connect(proc);
+  proc.connect(muteGain);
+  muteGain.connect(ac.destination);
+  proc.onaudioprocess = onAudio;
+
+  noiseFloor = -70; hang = 0; hitStreak = 0;
+}
+function stopMic(){
+  if(raf) cancelAnimationFrame(raf), raf=null;
+  if(proc){ proc.onaudioprocess=null; proc.disconnect(); proc=null; }
+  if(muteGain) muteGain.disconnect(), muteGain=null;
+  if(srcNode) srcNode.disconnect(), srcNode=null;
+  if(analyser) analyser.disconnect(), analyser=null;
+  if(stream) stream.getTracks().forEach(t=>t.stop()), stream=null;
+  if(ac){ ac.close().catch(()=>{}); ac=null; }
+}
+
+/* ============ قلب التول: قياس الصوت + حساب الفلوس ============ */
+function onAudio(e){
+  if(!running || !analyser) return;
+
+  const buf = e.inputBuffer.getChannelData(0);
+  let sum=0;
+  for(let i=0;i<buf.length;i++) sum += buf[i]*buf[i];
+  const rms = Math.sqrt(sum/buf.length);
+  const db  = 20*Math.log10(rms+1e-9);              // تقريباً -100 .. 0
+  const dt  = e.inputBuffer.duration*1000;          // ≈46ms لكل بلوك
+
+  // أرضية الضوضاء: تنزل بسرعة نسبياً (150ms) وتطلع ببطء (12s).
+  // الحد الأدنى -68 بدل -85 عشان في السكوت التام الأرضية ما تهبطش لحد
+  // إن أي همسة أو خبطة بسيطة تبقى "أعلى منها بكتير" وتتحسب كلام غلط.
+  const k = db < noiseFloor ? (1-Math.exp(-dt/150)) : (1-Math.exp(-dt/12000));
+  noiseFloor += k*(db-noiseFloor);
+  noiseFloor = Math.max(-68, Math.min(-25, noiseFloor));
+
+  // نسبة الطاقة في نطاق الصوت البشري (~85–3400Hz) لرفض الرعشة والخبط والهواء.
+  // لازم نحوّل الديسيبل لطاقة خطية الأول، وإلا النسبة بتبقى مضلِّلة.
+  analyser.getFloatFrequencyData(fd);
+  const hz = (ac.sampleRate/2)/fd.length;
+  const lo = Math.max(1, Math.floor(85/hz)), hi = Math.min(fd.length-1, Math.ceil(3400/hz));
+  let voice=0, all=0;
+  for(let i=1;i<fd.length;i++){
+    const p = Math.pow(10, fd[i]/10);
+    all += p;
+    if(i>=lo && i<=hi) voice += p;
+  }
+  const ratio = all>0 ? voice/all : 1;
+
+  lastLevel = Math.max(0, Math.min(1,(db+70)/55));
+  lastThr   = Math.max(0, Math.min(1,((noiseFloor+S.sens)+70)/55));
+
+  // كلام؟ لازم يعدّي العتبة + طاقته في نطاق الصوت البشري
+  const isHit = (db > noiseFloor + S.sens) && ratio > 0.30;
+  hitStreak = isHit ? hitStreak+1 : 0;
+  // لازم الصوت يستمر ~90ms (بلوكين) قبل ما يتحسب كلام، عشان طقة أو خبطة
+  // لحظية ما تشغّلش الحساب فوراً
+  if(hitStreak >= 2) hang = 380;
+  else hang = Math.max(0, hang - dt);               // تعليق عشان السكتات بين الكلمات
+  const nowTalking = hang > 0;
+
+  if(nowTalking !== talking){
+    talking = nowTalking;
+    el.meter.classList.toggle('talking', talking);
+    el.state.textContent = talking? 'بيتكلم… العدّاد شغال':'ساكت';
+    el.state.classList.toggle('on', talking);
+    if(talking){ segments++; curSegMs=0; el.stSeg.textContent=segments; }
+    else {
+      longestMs = Math.max(longestMs, curSegMs);
+      if(curSegMs > 400) addFeed(segments, curSegMs);
+      curSegMs=0;
+    }
+  }
+
+  if(talking){
+    talkMs += dt; curSegMs += dt;
+    money  += (S.rate/60) * (dt/1000);
+    if(money >= nextTick){ nextTick = Math.floor(money) + 1; kaching(); vibe(18); }
+    if(S.alarm>0 && !alarmFired && money >= S.alarm){ alarmFired=true; alarmSound(); vibe([90,60,90,60,180]); }
+    el.amountVal.textContent = fmt(money);
+    el.amount.classList.toggle('hot', S.alarm>0 && money>=S.alarm);
+    el.stTalk.textContent = mmss(talkMs);
+  }
+}
+
+/* ================= الرسم فقط ================= */
+function loop(){
+  raf = requestAnimationFrame(loop);
+  const lit = Math.round(lastLevel*BARS);
+  const thrBar = Math.round(lastThr*BARS);
+  for(let i=0;i<BARS;i++){
+    const b=barEls[i];
+    b.style.height = (i<lit ? 12 + (i/BARS)*88 : 12) + '%';
+    b.classList.toggle('on', i<lit);
+    b.classList.toggle('peak', i<lit && i>=thrBar);
+  }
+  el.fill.style.width = (lastLevel*100).toFixed(1)+'%';
+  el.amountVal.textContent = fmt(money);
+}
+
+/* سجل الجُمل */
+function addFeed(no, ms){
+  const feed = $('#feed');
+  const hint = feed.querySelector('.hint'); if(hint) hint.remove();
+  const sec = ms/1000;
+  const tag = sec>20 ? ' 🎤 خطبة' : sec>10 ? ' 😮 نَفَس واحد' : sec<1.2 ? ' 🤏 كلمتين' : '';
+  const it = document.createElement('div');
+  it.className='it';
+  it.innerHTML = `<span>جملة #${no}${tag}<div class="l">${sec.toFixed(1)} ثانية</div></span>`+
+                 `<span class="r">+${fmt(sec/60*S.rate)}</span>`;
+  feed.prepend(it);
+  while(feed.children.length > 40) feed.lastElementChild.remove();
+}
+function clearFeed(){
+  $('#feed').innerHTML = '<div class="hint">دوس «ابدأ العدّاد» وسيب التليفون جنبك…<br>'+
+    'كل جملة هتتكلمها هتلاقيها هنا بسعرها 😏</div>';
+}
+
+function tickClock(){
+  sessionMs = Date.now() - startedAt;
+  el.stTotal.textContent = mmss(sessionMs);
+}
+
+/* ================= التحكم ================= */
+async function start(){
+  el.err.style.display='none';
+  try{
+    await startMic();
+  }catch(e){
+    el.err.style.display='block';
+    el.err.innerHTML = 'مقدرتش أفتح المايك. تأكد إنك سامح للموقع باستخدام الميكروفون، '+
+      'وإن الصفحة شغالة على <b>https</b> أو <b>localhost</b>.<br><small style="color:#8b9a94">'+ (e.message||e.name) +'</small>';
+    return;
+  }
+  running=true; talking=false; hang=0;
+  money = S.flag; nextTick = Math.floor(money)+1; alarmFired=false;
+  talkMs=0; segments=0; longestMs=0; curSegMs=0;
+  startedAt=Date.now(); lastFrame=performance.now();
+  el.stSeg.textContent='0'; el.stTalk.textContent='0:00';
+  clearFeed();
+
+  el.dot.classList.add('live');
+  el.btnMain.textContent='إنهاء المشوار';
+  el.btnMain.classList.remove('start'); el.btnMain.classList.add('stop');
+  el.btnReset.disabled=false;
+  el.state.textContent='ساكت';
+
+  if(S.flag>0) kaching();
+  timer=setInterval(tickClock,250);
+  raf=requestAnimationFrame(loop);
+  requestWake();
+}
+
+function stop(showBill=true){
+  running=false; talking=false;
+  longestMs = Math.max(longestMs, curSegMs);
+  stopMic(); clearInterval(timer); releaseWake();
+  el.dot.classList.remove('live');
+  el.meter.classList.remove('talking');
+  el.btnMain.textContent='ابدأ العدّاد';
+  el.btnMain.classList.add('start'); el.btnMain.classList.remove('stop');
+  el.state.textContent='مقفول'; el.state.classList.remove('on');
+  barEls.forEach(b=>{ b.style.height='12%'; b.classList.remove('on','peak'); });
+  el.fill.style.width='0%';
+  if(showBill && (talkMs>0 || S.flag>0)) showReceipt();
+}
+
+function reset(){
+  money = running? S.flag : 0;
+  nextTick=Math.floor(money)+1; alarmFired=false;
+  talkMs=0; segments=0; longestMs=0; curSegMs=0; startedAt=Date.now();
+  el.amountVal.textContent=fmt(money); el.stTalk.textContent='0:00';
+  el.stTotal.textContent='0:00'; el.stSeg.textContent='0';
+  el.amount.classList.remove('hot');
+  clearFeed();
+  blip(420,.08);
+}
+
+/* ================= الفاتورة ================= */
+function showReceipt(){
+  const talkMin = talkMs/60000;
+  const silent  = Math.max(0, sessionMs - talkMs);
+  const pct     = sessionMs>0 ? Math.round(talkMs/sessionMs*100) : 0;
+  const d = new Date();
+  const verdict =
+    money>=500 ? 'يا خبر… ده مش كلام، ده استثمار عقاري 🏗️' :
+    money>=100 ? 'الفم ده لازم يتفرض عليه ضرائب 💰' :
+    money>=25  ? 'كلام محترم، والفاتورة محترمة 😌' :
+    money>=5   ? 'ماشي، لسه في حدود المعقول 🙂' :
+                 'ما شاء الله، شخص اقتصادي في الكلام 🤐';
+
+  $('#receipt').innerHTML = `
+    <div class="hd">
+      <b>🚕 عدّاد الكلام</b>
+      <div>فاتورة رقم #${String(Math.floor(Math.random()*9000+1000))} — ${d.toLocaleDateString('ar-EG')} ${d.toLocaleTimeString('ar-EG',{hour:'2-digit',minute:'2-digit'})}</div>
+    </div>
+    <div class="ln"><span>أجرة فتح العدّاد</span><span>${fmt(S.flag)}</span></div>
+    <div class="ln"><span>مدة الكلام الصافي</span><span>${mmss(talkMs)}</span></div>
+    <div class="ln"><span>التعريفة</span><span>${fmt(S.rate)} / دقيقة</span></div>
+    <div class="ln"><span>قيمة الكلام</span><span>${fmt(talkMin*S.rate)}</span></div>
+    <div class="ln"><span>عدد الجُمل</span><span>${segments}</span></div>
+    <div class="ln"><span>أطول نَفَس من غير سكوت</span><span>${mmss(longestMs)}</span></div>
+    <div class="ln"><span>مدة السكوت (مجاناً)</span><span>${mmss(silent)}</span></div>
+    <div class="ln"><span>نسبة الكلام من الجلسة</span><span>${pct}%</span></div>
+    <div class="ln tot"><span>الإجمالي</span><span>${fmt(money)} ${S.cur}</span></div>
+    <div class="ft">${verdict}<br>الخدمة دي للهزار — السكوت من دهب، والكلام بقى بفلوس.</div>`;
+  openSheet('#sheetBill');
+  kaching();
+}
+
+async function share(){
+  const txt = `🚕 فاتورة عدّاد الكلام\n`+
+    `مدة الكلام: ${mmss(talkMs)} من أصل ${mmss(sessionMs)}\n`+
+    `عدد الجُمل: ${segments}\n`+
+    `التعريفة: ${fmt(S.rate)} ${S.cur}/دقيقة\n`+
+    `الإجمالي المطلوب: ${fmt(money)} ${S.cur} 💸`;
+  try{
+    if(navigator.share) await navigator.share({title:'فاتورة عدّاد الكلام', text:txt});
+    else { await navigator.clipboard.writeText(txt); toast('اتنسخت الفاتورة ✅'); }
+  }catch(e){}
+}
+function toast(msg){
+  const t=document.createElement('div');
+  t.textContent=msg;
+  t.style.cssText='position:fixed;bottom:100px;left:50%;transform:translateX(-50%);background:#182019;'+
+    'border:1px solid #2a352f;color:#cfe;padding:11px 18px;border-radius:99px;font-size:14px;z-index:99';
+  document.body.appendChild(t);
+  setTimeout(()=>t.remove(),1800);
+}
+
+/* ================= Wake Lock ================= */
+async function requestWake(){
+  if(!S.wake || !('wakeLock' in navigator)) return;
+  try{ wakeLock = await navigator.wakeLock.request('screen'); }catch(e){}
+}
+function releaseWake(){ try{ wakeLock && wakeLock.release(); }catch(e){} wakeLock=null; }
+document.addEventListener('visibilitychange',()=>{
+  if(document.visibilityState==='visible' && running) requestWake();
+});
+
+/* ================= الشيتات ================= */
+function openSheet(sel){ $(sel).classList.add('show'); }
+function closeSheet(sel){ $(sel).classList.remove('show'); }
+document.querySelectorAll('.sheet').forEach(sh=>{
+  sh.addEventListener('click', e=>{ if(e.target===sh) sh.classList.remove('show'); });
+});
+
+/* ================= الأحداث ================= */
+el.btnMain.onclick = ()=> running? stop() : start();
+el.btnReset.onclick = reset;
+$('#btnSettings').onclick = ()=>{ openSheet('#sheetSettings'); if(ac) blip(660,.05); };
+$('#btnCloseSettings').onclick = ()=> closeSheet('#sheetSettings');
+$('#btnSound').onclick = ()=>{ S.sound=!S.sound; toggleSw($('#swSound'),S.sound); save(); syncLabels(); };
+$('#btnShare').onclick = share;
+$('#btnPay').onclick = ()=>{
+  toast('الدفع نقدي بس 😏 سلّم الكاش');
+  vibe([40,50,40]); blip(300,.2,'sawtooth',.15);
+};
+
+$('#inRate').oninput = e=>{ S.rate=Math.max(0,+e.target.value||0); save(); syncLabels(); };
+$('#inFlag').oninput = e=>{ S.flag=Math.max(0,+e.target.value||0); save(); syncLabels(); };
+$('#inCur').onchange = e=>{ S.cur=e.target.value; save(); syncLabels(); };
+$('#inSens').oninput = e=>{ S.sens=+e.target.value; save(); };
+$('#inAlarm').oninput = e=>{ S.alarm=Math.max(0,+e.target.value||0); save(); };
+$('#swSound').onclick = ()=>{ S.sound=!S.sound; toggleSw($('#swSound'),S.sound); save(); syncLabels(); };
+$('#swVibe').onclick  = ()=>{ S.vibe=!S.vibe;  toggleSw($('#swVibe'),S.vibe); save(); vibe(30); };
+$('#swWake').onclick  = ()=>{ S.wake=!S.wake;  toggleSw($('#swWake'),S.wake); save(); S.wake?requestWake():releaseWake(); };
+
+load();
+if('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js').catch(()=>{});
+</script>
+</body>
+</html>
