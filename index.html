@@ -350,7 +350,7 @@
       <div><div class="t" data-i="sKa">صوت الكاشينج</div><div class="d" data-i="sKaD">تكة كل ما يتحصّل مبلغ</div></div>
       <div class="sw on" id="swSound"></div>
     </div>
-    <div class="row">
+    <div class="row" id="rowVibe">
       <div><div class="t" data-i="sVibe">اهتزاز</div><div class="d" data-i="sVibeD">على الأندرويد بس</div></div>
       <div class="sw on" id="swVibe"></div>
     </div>
@@ -710,6 +710,11 @@ function dbClear(store){
 function toggleSw(sw,on){ sw.classList.toggle('on',on); }
 
 /* ================= تبديل اللغة ================= */
+// آيفون (Safari) ما بيدعمش Vibration API خالص — قيد من نظام التشغيل نفسه،
+// مفيش أي كود يقدر يلفّه. نخبّي الخيار خالص بدل ما يفضل زرار مفعّل عمره ما هيعمل حاجة.
+const VIBE_SUPPORTED = !!navigator.vibrate;
+if(!VIBE_SUPPORTED){ S.vibe = false; const r=document.getElementById('rowVibe'); if(r) r.style.display='none'; }
+
 function applyLang(){
   L = T[S.lang] || T.ar;
   document.documentElement.lang = S.lang;
