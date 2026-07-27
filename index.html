@@ -335,6 +335,10 @@
       <div class="chips" id="modes" style="margin:10px 0 0"></div>
     </div>
     <div class="row">
+      <div><div class="t" data-i="sKnown">الأشخاص المحفوظين</div><div class="d" id="knownDesc"></div></div>
+      <button class="chip" id="btnForgetPeople" data-i="sForget">نسيان الكل</button>
+    </div>
+    <div class="row">
       <div><div class="t" data-i="sPrint">بصمة الصوت</div><div class="d" data-i="sPrintD">تسجيل، اختبار، وضبط الصرامة</div></div>
       <button class="chip" id="btnOpenVoice" data-i="sOpen">افتح</button>
     </div>
@@ -462,6 +466,10 @@ ar:{
   hLast14:'آخر ١٤ يوم', hOf:'من', hPeople:'أشخاص', hClear:'امسح التاريخ',
   hCleared:'التاريخ اتمسح ✅', hConfirm:'متأكد؟ التاريخ كله هيتمسح',
   ttlHist:'تاريخك',
+  sKnown:'الأشخاص المحفوظين', sForget:'نسيان الكل',
+  knownDesc:n=>`${n} شخص اتعرّف عليهم قبل كده — بيفتكرهم بين الجلسات`,
+  forgetConfirm:'متأكد؟ التطبيق هينسى كل الأشخاص المحفوظين ويعتبر أي حد جديد المرة الجاية.',
+  forgetDone:'اتنسوا كلهم ✅',
   spYou:'إنت', spN:n=>`المتحدث ${n}`, spTitle:'الحاضرين', spRename:'اضغط على الاسم عشان تغيّره',
   sPrint:'بصمة الصوت', sPrintD:'تسجيل، اختبار، وضبط الصرامة', sOpen:'افتح',
   sKa:'صوت الكاشينج', sKaD:'تكة كل ما يتحصّل مبلغ',
@@ -540,6 +548,10 @@ en:{
   hLast14:'last 14 days', hOf:'of', hPeople:'people', hClear:'Clear history',
   hCleared:'History cleared ✅', hConfirm:'Sure? This wipes all history',
   ttlHist:'Your history',
+  sKnown:'Saved people', sForget:'Forget all',
+  knownDesc:n=>`${n} people recognised before — remembered across sessions`,
+  forgetConfirm:'Sure? The app will forget everyone saved and treat everyone as new next time.',
+  forgetDone:'All forgotten ✅',
   spYou:'You', spN:n=>`Speaker ${n}`, spTitle:'In the room', spRename:'Tap a name to change it',
   sPrint:'Voice print', sPrintD:'Record, test, and tune strictness', sOpen:'Open',
   sKa:'Cha-ching sound', sKaD:'A tick every time money is charged',
@@ -634,6 +646,7 @@ function load(){
   $('#inThr').value = Math.round(S.vThr*100);
   applyLang();
   loadPrintData();
+  loadPeople();
 }
 function save(){ localStorage.buzzMeter = JSON.stringify(S); }
 
@@ -645,11 +658,12 @@ function openDB(){
   if(db) return Promise.resolve(db);
   return new Promise((res)=>{
     let req;
-    try{ req = indexedDB.open('buzz', 1); }catch(e){ return res(null); }
+    try{ req = indexedDB.open('buzz', 2); }catch(e){ return res(null); }
     req.onupgradeneeded = ()=>{
       const d = req.result;
       if(!d.objectStoreNames.contains('sessions')) d.createObjectStore('sessions',{keyPath:'id',autoIncrement:true});
       if(!d.objectStoreNames.contains('kv'))       d.createObjectStore('kv',{keyPath:'k'});
+      if(!d.objectStoreNames.contains('people'))   d.createObjectStore('people',{keyPath:'id'});
     };
     req.onsuccess = ()=>{ db = req.result; res(db); };
     req.onerror   = ()=> res(null);
@@ -696,6 +710,7 @@ function applyLang(){
   });
 
   sensLabel();
+  updateKnownDesc();
   $('#btnLang').textContent = L.otherShort;
   $('#btnLang').title = L.ttlLang;
   $('#btnSound').title = L.ttlSound;
@@ -858,11 +873,11 @@ function startVad(){
   }catch(e){ return; }
   vadWorker.onmessage = ev=>{
     const m = ev.data;
-    if(m.type === 'ready'){ vadReady = true; vadQ = []; }
+    if(m.type === 'ready'){ vadReady = true; vadQ = []; sensLabel(); }
     else if(m.type === 'p'){ onVadResult(m.p); }
-    else if(m.type === 'fail'){ vadReady = false; vadQ = []; }   // نرجع للكشف بالطاقة
+    else if(m.type === 'fail'){ vadReady = false; vadQ = []; sensLabel(); }   // نرجع للكشف بالطاقة
   };
-  vadWorker.onerror = ()=>{ vadReady = false; vadQ = []; };
+  vadWorker.onerror = ()=>{ vadReady = false; vadQ = []; sensLabel(); };
   vadWorker.postMessage({type:'load'});
 }
 
@@ -881,36 +896,65 @@ function centroid(list, weights){
    تجميع جشع مباشر: كل جملة تتقارن بمراكز المجموعات الموجودة، تنضم لأقربها
    لو عدّت العتبة، وإلا تفتح مجموعة جديدة. بيشتغل لحظياً من غير ما نستنى
    الجلسة تخلص، والبصمات دي بتتحسب أصلاً فالتكلفة صفر. */
+/* allPeople: كل شخص اتعرّف عليه التطبيق قبل كده، محمّل من IndexedDB —
+   ده اللي بيدّي "التطبيق بيفتكر نفس الأشخاص" بين الجلسات المختلفة.
+   speakers: مين اتكلم في الجلسة الحالية بس (نفس عناصر allPeople بالمرجع). */
+let allPeople = [];
 let speakers = [];
+
+async function loadPeople(){
+  allPeople = await dbAll('people');
+  allPeople.forEach(p=>{ p.money=0; p.talkMs=0; p.segs=0; });
+  updateKnownDesc();
+}
+
+function savePerson(person){
+  // الحقول دي عمرها الجلسة بس — منحفظهاش عشان النسخة المحفوظة تفضل نضيفة
+  const {money, talkMs, segs, ...persist} = person;
+  dbPut('people', persist).catch(()=>{});
+}
 
 function assignSpeaker(emb){
   let best = -1, bestScore = -1;
-  speakers.forEach((sp,i)=>{
-    const s = cosine(emb, sp.emb);
+  allPeople.forEach((p,i)=>{
+    const s = cosine(emb, p.emb);
     if(s > bestScore){ bestScore = s; best = i; }
   });
 
-  let sp;
+  let person;
   if(best >= 0 && bestScore >= S.splitThr){
-    sp = speakers[best];
-    sp.embs.push(emb);
-    if(sp.embs.length > 12) sp.embs.shift();
-    sp.emb = centroid(sp.embs);          // المركز بيتحدّث مع كل جملة
-    sp.n++;
+    person = allPeople[best];
+    person.embs.push(emb);
+    if(person.embs.length > 12) person.embs.shift();
+    person.emb = centroid(person.embs);   // المركز بيتحدّث مع كل جملة
   } else {
-    sp = { id:speakers.length+1, name:null, emb:emb.slice(), embs:[emb],
-           n:1, talkMs:0, segs:0, money:0, owner:false };
-    speakers.push(sp);
+    person = {
+      id: 'p_'+Date.now().toString(36)+Math.random().toString(36).slice(2,7),
+      name:null, emb:emb.slice(), embs:[emb],
+      totalMoney:0, totalTalkMs:0, totalSegs:0, sessionsCount:0,
+      firstSeen:Date.now(), lastSeen:Date.now(), owner:false,
+      money:0, talkMs:0, segs:0,
+    };
+    allPeople.push(person);
+    updateKnownDesc();
   }
-  // صاحب التليفون: المجموعة اللي مركزها يطابق البصمة المسجّلة
-  if(S.vPrint) sp.owner = cosine(sp.emb, S.vPrint) >= S.vThr;
-  return sp;
+  // صاحب التليفون: الشخص اللي بصمته تطابق البصمة المسجّلة
+  if(S.vPrint) person.owner = cosine(person.emb, S.vPrint) >= S.vThr;
+
+  if(!speakers.includes(person)){
+    person.money=0; person.talkMs=0; person.segs=0;   // بداية جديدة للجلسة دي
+    person.sessionsCount++;
+    speakers.push(person);
+  }
+  person.lastSeen = Date.now();
+  savePerson(person);
+  return person;
 }
 
 function speakerName(sp){
   if(sp.name) return sp.name;
   if(sp.owner) return L.spYou;
-  return L.spN(sp.id);
+  return L.spN(speakers.indexOf(sp)+1);
 }
 
 const SPK_COLORS = ['#39e17c','#ffb02e','#5ab7ff','#ff7ad9','#ffe066','#8affc1'];
@@ -926,7 +970,7 @@ function renderSpeakers(){
   box.innerHTML = `<div class="hd"><span>${L.spTitle} (${speakers.length})</span><span>${L.spRename}</span></div>` +
     speakers.map((sp,i)=>`
       <div class="p">
-        <span class="av" style="background:${spkColor(i)}">${sp.id}</span>
+        <span class="av" style="background:${spkColor(i)}">${i+1}</span>
         <span style="flex:1;min-width:0">
           <input class="nm" data-sp="${sp.id}" value="${speakerName(sp).replace(/"/g,'&quot;')}">
           <span class="sub">${mmss(sp.talkMs)} · ${sp.segs} ${L.rSegUnit}</span>
@@ -937,10 +981,15 @@ function renderSpeakers(){
 
   box.querySelectorAll('.nm').forEach(inp=>{
     inp.onchange = ()=>{
-      const sp = speakers.find(s=>s.id === +inp.dataset.sp);
-      if(sp) sp.name = inp.value.trim() || null;
+      const sp = speakers.find(s=>s.id === inp.dataset.sp);
+      if(sp){ sp.name = inp.value.trim() || null; savePerson(sp); }
     };
   });
+}
+
+function updateKnownDesc(){
+  const n = $('#knownDesc');
+  if(n) n.textContent = L.knownDesc(allPeople.length);
 }
 
 /* ============ بصمة بتتعلّم مع الاستخدام ============ */
@@ -1235,6 +1284,8 @@ async function endUtterance(no, ms){
 function chargeSpeaker(sp, amount, heldMs){
   if(!sp) return;
   sp.money += amount; sp.talkMs += heldMs; sp.segs++;
+  sp.totalMoney += amount; sp.totalTalkMs += heldMs; sp.totalSegs++;
+  savePerson(sp);
 }
 
 /* ================= الرسم فقط ================= */
@@ -1529,7 +1580,7 @@ function saveSession(){
     money, cur: S.cur, rate: S.rate, flag: S.flag, mode: S.billMode,
     talkMs, sessionMs, segments, longestMs,
     rejected: vRejected, freeMs: vFreeMs,
-    speakers: speakers.map(s=>({name:speakerName(s), talkMs:s.talkMs, segs:s.segs, money:s.money, owner:s.owner}))
+    speakers: speakers.map(s=>({personId:s.id, name:speakerName(s), talkMs:s.talkMs, segs:s.segs, money:s.money, owner:s.owner}))
   }).catch(()=>{});
 }
 
@@ -1646,6 +1697,13 @@ $('#btnClearHist').onclick = async ()=>{
   await dbClear('sessions');
   toast(L.hCleared);
   showHistory();
+};
+$('#btnForgetPeople').onclick = async ()=>{
+  if(!confirm(L.forgetConfirm)) return;
+  await dbClear('people');
+  allPeople = []; speakers = []; lastSpeaker = null;
+  renderSpeakers(); updateKnownDesc();
+  toast(L.forgetDone);
 };
 $('#btnLang').onclick = ()=>{
   S.lang = S.lang === 'ar' ? 'en' : 'ar';
